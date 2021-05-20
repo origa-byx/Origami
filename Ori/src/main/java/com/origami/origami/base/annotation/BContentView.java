@@ -1,4 +1,4 @@
-package com.safone.origami.base.annotation;
+package com.origami.origami.base.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -8,10 +8,10 @@ import java.lang.annotation.Target;
 /**
  * @author xiao gan
  * @date 2020/12/2
- * @description: {@link android.app.Activity#findViewById(int)}
+ * @description: {@link android.app.Activity#setContentView(int)}
  **/
-@Target(ElementType.FIELD)
+@Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface BView {
+public @interface BContentView {
     int value();
 }

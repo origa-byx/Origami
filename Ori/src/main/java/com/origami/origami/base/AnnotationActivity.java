@@ -1,4 +1,4 @@
-package com.safone.origami.base;
+package com.origami.origami.base;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -16,12 +16,12 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 
-import com.safone.origami.R;
-import com.safone.origami.base.annotation.BClick;
-import com.safone.origami.base.annotation.BContentView;
-import com.safone.origami.base.annotation.BView;
-import com.safone.origami.base.base_utils.ToastMsg;
-import com.safone.utils.StatusUtils;
+import com.origami.origami.R;
+import com.origami.origami.base.annotation.BClick;
+import com.origami.origami.base.annotation.BContentView;
+import com.origami.origami.base.annotation.BView;
+import com.origami.origami.base.base_utils.ToastMsg;
+import com.origami.utils.StatusUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;

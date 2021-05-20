@@ -1,7 +1,7 @@
-package com.safone.origami.base.base_utils;
+package com.origami.origami.base.base_utils;
 
-import com.safone.wcdma.base.EventConfig;
-import com.safone.wcdma.base.OriEventBus;
+import com.origami.wcdma.base.EventConfig;
+import com.origami.wcdma.base.OriEventBus;
 
 /**
  * @by: origami

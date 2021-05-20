@@ -1,4 +1,4 @@
-package com.safone.view;
+package com.origami.view;
 
 import android.content.Context;
 import android.graphics.Bitmap;

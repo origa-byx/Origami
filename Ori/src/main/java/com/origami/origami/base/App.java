@@ -1,4 +1,4 @@
-package com.safone.origami.base;
+package com.origami.origami.base;
 
 import android.app.Application;
 

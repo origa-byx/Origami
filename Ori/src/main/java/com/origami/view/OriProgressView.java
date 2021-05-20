@@ -1,4 +1,4 @@
-package com.safone.view;
+package com.origami.view;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -14,7 +14,7 @@ import android.view.View;
 import androidx.annotation.FloatRange;
 import androidx.annotation.Nullable;
 
-import com.safone.origami.R;
+import com.origami.origami.R;
 
 
 /**

@@ -1,4 +1,4 @@
-package com.safone.utils;
+package com.origami.utils;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;

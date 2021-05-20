@@ -1,4 +1,4 @@
-package com.safone.view;
+package com.origami.view;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
@@ -16,7 +16,7 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.safone.origami.R;
+import com.origami.origami.R;
 
 import java.util.ArrayList;
 import java.util.List;

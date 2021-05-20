@@ -1,4 +1,4 @@
-package com.safone.origami.base.annotation;
+package com.origami.origami.base.annotation;
 
 import android.view.View;
 

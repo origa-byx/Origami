@@ -1,4 +1,4 @@
-package com.safone.origami.base;
+package com.origami.origami.base;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -11,9 +11,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.safone.origami.base.annotation.BClick;
-import com.safone.origami.base.annotation.BContentView;
-import com.safone.origami.base.annotation.BView;
+import com.origami.origami.base.annotation.BClick;
+import com.origami.origami.base.annotation.BContentView;
+import com.origami.origami.base.annotation.BView;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;

@@ -1,4 +1,4 @@
-package com.safone.utils;
+package com.origami.utils;
 
 import android.content.Context;
 import android.content.res.Resources;

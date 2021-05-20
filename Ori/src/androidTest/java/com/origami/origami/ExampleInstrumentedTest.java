@@ -1,4 +1,4 @@
-package com.safone.origami;
+package com.origami.origami;
 
 import android.content.Context;
 
