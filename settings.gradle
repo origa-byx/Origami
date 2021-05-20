@@ -1,0 +1,3 @@
+include ':Ori'
+include ':app'
+rootProject.name = "Origami"
