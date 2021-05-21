@@ -24,15 +24,18 @@ public class OriEventBus {
     private final static Map<String, List<Event>> EVENT_MAP = new HashMap<>();
 
     public static void registerEvent(String tag, Event event){
-        if(tag == null || event == null){return;}
+        if(tag == null || event == null){ return; }
         List<Event> events = EVENT_MAP.get(tag);
         if(events == null){ events = new ArrayList<>(); }
-        events.add(event);
-        EVENT_MAP.put(tag,events);
+        if(!events.contains(event)) {
+            event.tag = tag;
+            events.add(event);
+            EVENT_MAP.put(tag, events);
+        }
     }
 
     public static void triggerEvent(String tag, Object... args){
-        if(tag == null){return;}
+        if(tag == null){ return; }
         List<Event> events = EVENT_MAP.get(tag);
         if(events != null){
             for (Event event : events) {
@@ -42,12 +45,12 @@ public class OriEventBus {
     }
 
     public static void removeEventsByTag(String tag){
-        if(tag == null){return;}
+        if(tag == null){ return; }
         EVENT_MAP.remove(tag);
     }
 
     public static void removeEvent(Event event){
-        if(event == null){return;}
+        if(event == null){ return; }
         if(EVENT_MAP.get(event.tag) != null){ EVENT_MAP.get(event.tag).remove(event); }
     }
 
@@ -61,7 +64,7 @@ public class OriEventBus {
     public static abstract class Event{
 
         private String tag;
-        private int run_on_thread = RunThread.CURRENT;
+        private final int run_on_thread;
         private final WeakReference<Object> weakReference;
 
         public Event(Activity activity, int run_thread) {
@@ -79,9 +82,9 @@ public class OriEventBus {
                 Activity oa = ob instanceof Activity ? ((Activity) ob) : null;
                 Fragment of = ob instanceof Fragment ? ((Fragment) ob) : null;
                 if(oa == null || oa.isFinishing()){
-                    log_msg("oa");  return;
+                    log_msg("Activity");  return;
                 } else if(oa == null && (of == null || of.isDetached())) {
-                    log_msg("of");  return;
+                    log_msg("Fragment");  return;
                 }
                 switch (run_on_thread){
                     case RunThread.MAIN_UI:{

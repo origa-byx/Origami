@@ -20,6 +20,7 @@ import com.origami.origami.R;
 import com.origami.origami.base.annotation.BClick;
 import com.origami.origami.base.annotation.BContentView;
 import com.origami.origami.base.annotation.BView;
+import com.origami.origami.base.base_utils.BasePresenter;
 import com.origami.origami.base.base_utils.ToastMsg;
 import com.origami.utils.StatusUtils;
 
@@ -33,7 +34,9 @@ import java.lang.reflect.Modifier;
  * @date 2020/12/2
  * @description:
  **/
-public abstract class AnnotationActivity extends AppCompatActivity implements View.OnClickListener {
+public abstract class AnnotationActivity<T extends BasePresenter<?>> extends AppCompatActivity implements View.OnClickListener {
+
+    protected T mPresenter;
 
     //点击事件集合
     protected final SparseArray<Method> methodSparseArray = new SparseArray<>();
@@ -85,6 +88,8 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
         }
         setStatusBar();
         init(savedInstanceState);
+        AnnotationActivityManager.addActivity(this);
+        
     }
 
     protected void setStatusBar(){
@@ -113,18 +118,20 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
     @Override
     protected void onResume() {
         super.onResume();
-        showToastEvent = new OriEventBus.Event(this, OriEventBus.RunThread.MAIN_UI) {
-            @Override
-            public void postEvent(Object... args) {
-                if(args.length > 0){
-                    if(args[0] instanceof ToastMsg) {
-                        showToastMsg((ToastMsg) args[0]);
-                    }else if(args[0] instanceof String){
-                        showToastMsg(new ToastMsg((String) args[0]));
+        if(showToastEvent == null) {
+            showToastEvent = new OriEventBus.Event(this, OriEventBus.RunThread.MAIN_UI) {
+                @Override
+                public void postEvent(Object... args) {
+                    if (args.length > 0) {
+                        if (args[0] instanceof ToastMsg) {
+                            showToastMsg((ToastMsg) args[0]);
+                        } else if (args[0] instanceof String) {
+                            showToastMsg(new ToastMsg((String) args[0]));
+                        }
                     }
                 }
-            }
-        };
+            };
+        }
         OriEventBus.registerEvent(EventConfig.SHOW_TOAST, showToastEvent);
     }
 
@@ -132,6 +139,12 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
     protected void onStop() {
         super.onStop();
         OriEventBus.removeEvent(showToastEvent);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        AnnotationActivityManager.removeActivity(this);
     }
 
     public void showToastMsg(ToastMsg msg){
