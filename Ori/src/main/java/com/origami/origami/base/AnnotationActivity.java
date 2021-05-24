@@ -49,6 +49,7 @@ public abstract class AnnotationActivity<T extends BasePresenter<?>> extends App
 //    private int sToastView_H = 0;
     OriEventBus.Event showToastEvent;
 
+    public abstract T newPresenter();
 
     public abstract void init(@Nullable Bundle savedInstanceState);
 
@@ -86,6 +87,7 @@ public abstract class AnnotationActivity<T extends BasePresenter<?>> extends App
                 }
             }
         }
+        mPresenter = newPresenter();
         setStatusBar();
         init(savedInstanceState);
         AnnotationActivityManager.addActivity(this);

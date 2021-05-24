@@ -19,12 +19,11 @@ public abstract class BasePresenter<T extends AnnotationActivity<?>> {
         this.weak_act = new WeakReference<>(activity);
     }
 
+    /**
+     * @return may be null
+     */
     private T getAct(){
         return this.weak_act.get();
-    }
-
-    public void a(){
-
     }
 
 }
