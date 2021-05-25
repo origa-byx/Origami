@@ -37,6 +37,19 @@ public class SoftInputUtil {
         void onChanged(boolean isSoftInputShow, int softInputHeight, int viewOffset);
     }
 
+    public void attachSoftInput(View moveView,final View... anyView) {
+        attachSoftInput(new ISoftInputChanged() {
+            @Override
+            public void onChanged(boolean isSoftInputShow, int softInputHeight, int viewOffset) {
+                if(isSoftInputShow) {
+                    moveView.setTranslationY(-viewOffset);
+                }else {
+                    moveView.setTranslationY(0);
+                }
+            }
+        },anyView);
+    }
+
     public void attachSoftInput( final ISoftInputChanged listener, final View... anyView) {
         if (anyView == null || listener == null || anyView.length == 0)
             return;

@@ -2,4 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.origami.origami">
 
+    <application>
+        <activity android:name="com.origami.activity.OriImageActivity"/>
+    </application>
+
 </manifest>

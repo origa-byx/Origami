@@ -53,6 +53,8 @@ public class OriClipImageView extends View {
     private float mR = 0;//半径
     private float minScale = 1f;//最小放缩, 根据位图大小确定
 
+    private boolean showClipCircle = true;
+
     private final int mustPx = 5;//偏移放缩保留像素,预防紧贴情况下强转int可能产生的裁剪时数组越界
 
     private final SparseArray<Point> pointSparseArray = new SparseArray<>();
@@ -199,15 +201,17 @@ public class OriClipImageView extends View {
             canvas.drawBitmap(mBitmap, 0,0, null);
             canvas.restore();
         }
-        canvas.save();
-        mPath.reset();
-        mPath.addCircle((float) getWidth() / 2,(float) getHeight() / 2,
-                mR, Path.Direction.CCW);
-        canvas.clipPath(mPath, Region.Op.DIFFERENCE);
-        canvas.drawColor(Color.argb(150,0,0,0));
-        canvas.drawCircle((float) getWidth() / 2,(float) getHeight() / 2,
-                mR, mPaint);
-        canvas.restore();
+        if(showClipCircle) {
+            canvas.save();
+            mPath.reset();
+            mPath.addCircle((float) getWidth() / 2, (float) getHeight() / 2,
+                    mR, Path.Direction.CCW);
+            canvas.clipPath(mPath, Region.Op.DIFFERENCE);
+            canvas.drawColor(Color.argb(150, 0, 0, 0));
+            canvas.drawCircle((float) getWidth() / 2, (float) getHeight() / 2,
+                    mR, mPaint);
+            canvas.restore();
+        }
     }
 
     /**
@@ -328,6 +332,10 @@ public class OriClipImageView extends View {
             builder.append(ran.charAt(random.nextInt(ran.length())));
         }
         return builder.toString();
+    }
+
+    public void setShowClipCircle(boolean showClipCircle) {
+        this.showClipCircle = showClipCircle;
     }
 
     private int getW(){

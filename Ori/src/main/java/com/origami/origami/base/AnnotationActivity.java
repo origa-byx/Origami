@@ -53,11 +53,15 @@ public abstract class AnnotationActivity<T extends BasePresenter<?>> extends App
 
     public abstract void init(@Nullable Bundle savedInstanceState);
 
+    protected int getLayout(){ return 0; }
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         BContentView contentView = getClass().getAnnotation(BContentView.class);
-        if(contentView != null){ setContentView(contentView.value()); }
+        if(contentView != null){
+            setContentView(contentView.value());
+        }else { setContentView(getLayout()); }
         Field[] fields = getClass().getDeclaredFields();
         for (Field field : fields) {
             BView bindMyView = field.getAnnotation(BView.class);

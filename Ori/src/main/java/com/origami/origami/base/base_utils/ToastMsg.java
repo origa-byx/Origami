@@ -1,7 +1,8 @@
 package com.origami.origami.base.base_utils;
 
-import com.origami.wcdma.base.EventConfig;
-import com.origami.wcdma.base.OriEventBus;
+
+import com.origami.origami.base.EventConfig;
+import com.origami.origami.base.OriEventBus;
 
 /**
  * @by: origami
