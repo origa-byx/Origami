@@ -38,7 +38,7 @@ public class ToastMsg {
         this(msg,showType,1000);
     }
 
-    public ToastMsg(String msg, int showType, int showTime){
+    public ToastMsg(String msg, int showType, long showTime){
         this(msg,showType,showTime,true);
     }
 
@@ -57,4 +57,7 @@ public class ToastMsg {
         new ToastMsg(msg).show();
     }
 
+    public static void show_msg(String msg, long time){
+        new ToastMsg(msg, DEF, time).show();
+    }
 }

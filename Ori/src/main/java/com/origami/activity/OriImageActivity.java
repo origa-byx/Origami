@@ -13,6 +13,8 @@ import android.widget.ImageView;
 import com.origami.origami.R;
 import com.origami.origami.base.AnnotationActivity;
 import com.origami.origami.base.OriTransfer;
+import com.origami.origami.base.base_utils.ToastMsg;
+import com.origami.view.ImageDetailView;
 import com.origami.view.OriClipImageView;
 import com.origami.window.ShowUtil;
 
@@ -23,7 +25,7 @@ import java.io.File;
  */
 public class OriImageActivity extends AnnotationActivity<OriImagePresenter> {
 
-    private OriClipImageView imageView;
+    private ImageDetailView imageView;
     private Bitmap bitmap;
 
     public static void startThisAct(Activity activity, final Bitmap bitmap){
@@ -47,7 +49,7 @@ public class OriImageActivity extends AnnotationActivity<OriImagePresenter> {
         });
         ActivityOptionsCompat optionsCompat =
                 ActivityOptionsCompat.makeSceneTransitionAnimation(activity, view, "image");
-        activity.startActivity(intent,optionsCompat.toBundle());
+        activity.startActivity(intent, optionsCompat.toBundle());
     }
 
     @Override
@@ -65,7 +67,7 @@ public class OriImageActivity extends AnnotationActivity<OriImagePresenter> {
         imageView = findViewById(R.id.ori_image);
         bitmap = OriTransfer.getTransferValue("getBitmap");
         imageView.setImageBitmap(bitmap);
-        imageView.getRootView().setOnLongClickListener(new View.OnLongClickListener() {
+        imageView.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
                 ShowUtil.showSelect(OriImageActivity.this, new String[]{"保存"}, new ShowUtil.OnSelectListener() {
@@ -78,10 +80,18 @@ public class OriImageActivity extends AnnotationActivity<OriImagePresenter> {
                         } else {
                             path =  getResources().getString(labelRes) + File.separator + "image";
                         }
-                        imageView.saveBitmap(bitmap, path,true);
+                        String savePath = imageView.saveBitmap(path, true);
+                        if(savePath != null) {
+                            ToastMsg.show_msg("保存成功：" + savePath , 2000);
+                        }else {
+                            ToastMsg toastMsg = new ToastMsg("保存失败");
+                            toastMsg.showIcon = false;
+                            toastMsg.showTime = 2500;
+                            OriImageActivity.this.showToastMsg(toastMsg);
+                        }
                     }
                 },true);
-                return true;
+                return false;
             }
         });
     }

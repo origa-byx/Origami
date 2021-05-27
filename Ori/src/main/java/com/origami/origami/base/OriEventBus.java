@@ -81,10 +81,8 @@ public class OriEventBus {
             if((ob = weakReference.get()) != null){
                 Activity oa = ob instanceof Activity ? ((Activity) ob) : null;
                 Fragment of = ob instanceof Fragment ? ((Fragment) ob) : null;
-                if(oa == null || oa.isFinishing()){
-                    log_msg("Activity");  return;
-                } else if(oa == null && (of == null || of.isDetached())) {
-                    log_msg("Fragment");  return;
+                if((oa == null || oa.isFinishing()) && (of == null || of.isDetached())){
+                    log_msg("");  return;
                 }
                 switch (run_on_thread){
                     case RunThread.MAIN_UI:{
