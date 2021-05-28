@@ -108,4 +108,19 @@ public class StatusUtils {
         return resources.getDimensionPixelOffset(identifier);
     }
 
+
+    /**
+     * 获取底部导航栏高度
+     * @param context
+     * @return
+     */
+    public static int getNavigationBarHeight(Context context) {
+        if (context == null)
+            return 0;
+        Resources resources = context.getResources();
+        int resourceId = resources.getIdentifier("navigation_bar_height", "dimen", "android");
+        int height = resources.getDimensionPixelSize(resourceId);
+        return height;
+    }
+
 }

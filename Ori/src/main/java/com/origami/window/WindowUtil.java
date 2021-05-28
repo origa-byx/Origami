@@ -17,6 +17,7 @@ import android.widget.RelativeLayout;
 import com.origami.origami.R;
 import com.origami.utils.Dp2px;
 import com.origami.utils.SoftInputUtil;
+import com.origami.utils.StatusUtils;
 
 import java.lang.ref.WeakReference;
 
@@ -31,7 +32,7 @@ public class WindowUtil {
     private RelativeLayout rootLayout;
     private View bindView;
 
-    private int gravity;
+    private final int navH;
     private WindowManager window;
     private boolean showFlag = false;
     private final WindowManager.LayoutParams paramsWindow = new WindowManager.LayoutParams();
@@ -51,7 +52,7 @@ public class WindowUtil {
                 return super.onKeyDown(keyCode, event);
             }
         };
-        rootLayout.setPadding(0,0,0, SoftInputUtil.getNavigationBarHeight(activity));
+        navH = StatusUtils.getNavigationBarHeight(activity);
         paramsWindow.width = WindowManager.LayoutParams.MATCH_PARENT;
         paramsWindow.height = WindowManager.LayoutParams.MATCH_PARENT;
         paramsWindow.format = PixelFormat.TRANSPARENT;
@@ -144,6 +145,7 @@ public class WindowUtil {
         int translationY = Dp2px.dp2px(100);
         bindView.setTranslationY(translationY);
         bindView.setAlpha(0);
+        params.bottomMargin = navH;
         rootLayout.addView(bindView,params);
         window.addView(rootLayout,paramsWindow);
         showFlag = true;
@@ -167,6 +169,7 @@ public class WindowUtil {
         Activity activity = mActivity.get();
         if(activity == null){ return; }
         activity.getWindow().getDecorView().setAlpha(0.6f);
+        params.bottomMargin = navH;
         rootLayout.addView(bindView,params);
         window.addView(rootLayout,paramsWindow);
         showFlag = true;

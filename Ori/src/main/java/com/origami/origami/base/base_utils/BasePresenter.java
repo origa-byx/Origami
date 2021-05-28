@@ -11,7 +11,7 @@ import java.lang.ref.WeakReference;
  * @date: {2021-05-21}
  * @info:
  **/
-public abstract class BasePresenter<T extends AnnotationActivity<?>> {
+public abstract class BasePresenter<T extends AnnotationActivity> {
 
     protected WeakReference<T> weak_act;
 

@@ -33,10 +33,11 @@ import java.lang.reflect.Modifier;
  * @author xiao gan
  * @date 2020/12/2
  * @description:
+ * @see BContentView
+ * @see BView
+ * @see BClick
  **/
-public abstract class AnnotationActivity<T extends BasePresenter<?>> extends AppCompatActivity implements View.OnClickListener {
-
-    protected T mPresenter;
+public abstract class AnnotationActivity extends AppCompatActivity implements View.OnClickListener {
 
     //点击事件集合
     protected final SparseArray<Method> methodSparseArray = new SparseArray<>();
@@ -49,11 +50,7 @@ public abstract class AnnotationActivity<T extends BasePresenter<?>> extends App
 //    private int sToastView_H = 0;
     OriEventBus.Event showToastEvent;
 
-    public abstract T newPresenter();
-
     public abstract void init(@Nullable Bundle savedInstanceState);
-
-    protected int getLayout(){ return 0; }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState){
@@ -91,11 +88,9 @@ public abstract class AnnotationActivity<T extends BasePresenter<?>> extends App
                 }
             }
         }
-        mPresenter = newPresenter();
         setStatusBar();
         init(savedInstanceState);
         AnnotationActivityManager.addActivity(this);
-        
     }
 
     protected void setStatusBar(){
@@ -207,5 +202,11 @@ public abstract class AnnotationActivity<T extends BasePresenter<?>> extends App
         sMsgAnimator.start();
     }
 
+    /**
+     * @see BContentView
+     * @return
+     * @deprecated use {@link BContentView}
+     */
+    protected int getLayout(){ return 0; }
 
 }

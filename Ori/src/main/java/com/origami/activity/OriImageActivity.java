@@ -23,14 +23,19 @@ import java.io.File;
 /**
  * {@link OriImageActivity#startThisAct(Activity, Bitmap)}
  */
-public class OriImageActivity extends AnnotationActivity<OriImagePresenter> {
+public class OriImageActivity extends AnnotationActivity {
 
     private ImageDetailView imageView;
     private Bitmap bitmap;
 
+    /**
+     * 启动
+     * @param activity
+     * @param bitmap
+     */
     public static void startThisAct(Activity activity, final Bitmap bitmap){
         Intent intent = new Intent(activity, OriImageActivity.class);
-        OriTransfer.registerTransfer("getBitmap", new OriTransfer.Transfer<Bitmap>(OriTransfer.Simple) {
+        OriTransfer.registerTransfer("ori_getBitmap", new OriTransfer.Transfer<Bitmap>(OriTransfer.Simple) {
             @Override
             public Bitmap getT() {
                 return bitmap;
@@ -39,9 +44,15 @@ public class OriImageActivity extends AnnotationActivity<OriImagePresenter> {
         activity.startActivity(intent);
     }
 
+    /**
+     * 启动带转场动画
+     * @param activity
+     * @param view      目标view ：一般为点击的imageView
+     * @param bitmap
+     */
     public static void startThisAct(Activity activity, ImageView view, final Bitmap bitmap){
         Intent intent = new Intent(activity, OriImageActivity.class);
-        OriTransfer.registerTransfer("getBitmap", new OriTransfer.Transfer<Bitmap>(OriTransfer.Simple) {
+        OriTransfer.registerTransfer("ori_getBitmap", new OriTransfer.Transfer<Bitmap>(OriTransfer.Simple) {
             @Override
             public Bitmap getT() {
                 return bitmap;
@@ -53,11 +64,6 @@ public class OriImageActivity extends AnnotationActivity<OriImagePresenter> {
     }
 
     @Override
-    public OriImagePresenter newPresenter() {
-        return new OriImagePresenter(this);
-    }
-
-    @Override
     protected int getLayout() {
         return R.layout.activity_ori_image;
     }
@@ -65,7 +71,7 @@ public class OriImageActivity extends AnnotationActivity<OriImagePresenter> {
     @Override
     public void init(@Nullable Bundle savedInstanceState) {
         imageView = findViewById(R.id.ori_image);
-        bitmap = OriTransfer.getTransferValue("getBitmap");
+        bitmap = OriTransfer.getTransferValue("ori_getBitmap");
         imageView.setImageBitmap(bitmap);
         imageView.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
