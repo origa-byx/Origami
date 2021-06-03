@@ -13,22 +13,22 @@ import java.util.List;
  **/
 public class AnnotationActivityManager {
 
-    private final static List<AnnotationActivity<?>> mActivityList = new LinkedList<>();
+    private final static List<AnnotationActivity> mActivityList = new LinkedList<>();
 
-    public static void addActivity(AnnotationActivity<?> activity){
+    public static void addActivity(AnnotationActivity activity){
         mActivityList.add(activity);
     }
 
-    public static void removeActivity(AnnotationActivity<?> activity){
+    public static void removeActivity(AnnotationActivity activity){
         mActivityList.remove(activity);
     }
 
-    public static boolean contains(AnnotationActivity<?> activity){
+    public static boolean contains(AnnotationActivity activity){
         return mActivityList.contains(activity);
     }
 
-    public static AnnotationActivity<?> getActivity(Class<AnnotationActivity<?>> activity_clazz){
-        for (AnnotationActivity<?> annotationActivity : mActivityList) {
+    public static AnnotationActivity getActivity(Class<AnnotationActivity> activity_clazz){
+        for (AnnotationActivity annotationActivity : mActivityList) {
             if(annotationActivity.getClass() == activity_clazz){
                 return annotationActivity;
             }
@@ -37,7 +37,7 @@ public class AnnotationActivityManager {
     }
 
     public static void killAll(boolean killProcess){
-        for (AnnotationActivity<?> activity : mActivityList) {
+        for (AnnotationActivity activity : mActivityList) {
             if (activity != null && !activity.isFinishing()) {
                 activity.finish();
             }
