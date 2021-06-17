@@ -11,7 +11,7 @@ import com.origami.origami.base.base_utils.BasePresenter;
  * @date: {2021-05-28}
  * @info:
  **/
-public abstract class AnnotationMvpActivity<T extends BasePresenter<AnnotationActivity>> extends AnnotationActivity {
+public abstract class AnnotationMvpActivity<T extends BasePresenter<? extends AnnotationActivity>> extends AnnotationActivity {
 
     protected T mPresenter;
 

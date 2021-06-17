@@ -2,6 +2,7 @@ package com.origami.origami.base.base_utils;
 
 import android.app.Activity;
 
+import com.origami.origami.R;
 import com.origami.origami.base.AnnotationActivity;
 
 import java.lang.ref.WeakReference;
