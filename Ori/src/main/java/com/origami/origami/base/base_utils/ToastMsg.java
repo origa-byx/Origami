@@ -24,7 +24,7 @@ public class ToastMsg {
 
     public String msg;
 
-    public boolean showIcon;
+    public Boolean showIcon;
 
     public int showType;
 
@@ -35,7 +35,7 @@ public class ToastMsg {
     }
 
     public ToastMsg(String msg, int showType){
-        this(msg,showType,1000);
+        this(msg,showType,2000);
     }
 
     public ToastMsg(String msg, int showType, long showTime){
@@ -60,4 +60,8 @@ public class ToastMsg {
     public static void show_msg(String msg, long time){
         new ToastMsg(msg, DEF, time).show();
     }
+
+    public static void show_msg(String msg, Boolean boo){ new ToastMsg(msg, DEF, 2000 , boo).show(); }
+
+    public static void show_msg(String msg, Boolean boo, long time){ new ToastMsg(msg, DEF, time , boo).show(); }
 }

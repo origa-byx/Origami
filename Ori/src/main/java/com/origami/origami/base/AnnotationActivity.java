@@ -10,6 +10,7 @@ import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
@@ -157,10 +158,16 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
             sToastView.setVisibility(View.GONE);
             contView.addView(sToastView);
         }
-        if(msg.showIcon){
-            sToastView.findViewById(R.id._base_show_toast_icon).setVisibility(View.VISIBLE);
+        ImageView iconView = sToastView.findViewById(R.id._base_show_toast_icon);
+        if(msg.showIcon == null){
+            iconView.setVisibility(View.INVISIBLE);
         }else {
-            sToastView.findViewById(R.id._base_show_toast_icon).setVisibility(View.GONE);
+            iconView.setVisibility(View.VISIBLE);
+            if (msg.showIcon) {
+                iconView.setImageResource(R.mipmap._toast_ok);
+            } else {
+                iconView.setImageResource(R.mipmap._toast_no);
+            }
         }
         ((TextView) sToastView.findViewById(R.id._base_show_toast_msg)).setText(msg.msg);
 //        sToastView.measure(0,0);

@@ -186,6 +186,14 @@ public class WindowUtil {
         showFlag = false;
     }
 
+    public View getRootView(){
+        return rootLayout;
+    }
+
+    public View getBindView(){
+        return bindView;
+    }
+
     public boolean isShowing() {
         return showFlag;
     }

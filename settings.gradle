@@ -1,3 +1,5 @@
+include ':compiler'
+include ':annotation'
 include ':Ori'
 include ':app'
 rootProject.name = "Origami"
