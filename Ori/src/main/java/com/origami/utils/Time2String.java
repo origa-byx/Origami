@@ -1,5 +1,7 @@
 package com.origami.utils;
 
+import android.text.TextUtils;
+
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -11,16 +13,18 @@ import java.util.Date;
  **/
 public class Time2String {
 
+    private final static String[] weekDays = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};
+
     public static String longToText(long time,boolean add){
         if(add){ time = time * 1000; }
         return timeToText(new Date(time));
     }
 
-    public static String stringToText(String time,String Format){
-        if(Format==null){
-            Format = "yyyy-MM-dd HH:mm:ss";
+    public static String stringToText(String time,String format){
+        if(TextUtils.isEmpty(format)){
+            format = "yyyy-MM-dd HH:mm:ss";
         }
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(Format);
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(format);
         try {
             Date date = simpleDateFormat.parse(time);
             return timeToText(date);
@@ -31,7 +35,6 @@ public class Time2String {
     }
 
     public static String timeToText(Date date){
-        String[] weekDays = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};
         Date date1 = new Date();
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat simpleDateFormat1 = new SimpleDateFormat("HH:mm");
@@ -66,12 +69,16 @@ public class Time2String {
 //       }
     }
 
-    private static int getWeekNum(Date date){
+    public static int getWeekNum(Date date){
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
         int w = calendar.get(Calendar.DAY_OF_WEEK) - 1;
         if(w < 0){w = 0;}
         return w;
+    }
+
+    public static String getWeekName(Date date){
+        return weekDays[getWeekNum(date)];
     }
 
 

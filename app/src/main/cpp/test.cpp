@@ -3,6 +3,9 @@
 //
 #include <jni.h>
 #include <string>
+#include <stdlib.h>
+#include <stdio.h>
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -37,3 +40,7 @@ Java_com_ori_origami_Test_nativeTest(JNIEnv* env, jclass jcal, jbyteArray qrData
     return (jint) 0;
 }
 
+using namespace std;
+void test(){
+
+}

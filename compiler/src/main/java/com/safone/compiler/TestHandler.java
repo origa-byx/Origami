@@ -1,7 +1,7 @@
 package com.safone.compiler;
 
 import com.safone.compiler.annotation.TestAnn;
-import com.sun.java.browser.net.ProxyInfo;
+
 
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -29,7 +29,6 @@ public class TestHandler extends AbstractProcessor {
     private Filer mFiler;
     //跟元素相关的辅助类，帮助我们去获取一些元素相关的信息。
     private Elements elementUtils;
-    private Map<String, ProxyInfo> mProxyMap = new HashMap<String, ProxyInfo>();
 
     /**
      * 初始化

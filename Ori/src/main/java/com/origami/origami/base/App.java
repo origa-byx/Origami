@@ -1,6 +1,10 @@
 package com.origami.origami.base;
 
 import android.app.Application;
+import android.os.Build;
+
+import com.origami.log.OriLog;
+import com.origami.origami.BuildConfig;
 
 import java.net.DatagramSocket;
 
@@ -10,11 +14,9 @@ import java.net.DatagramSocket;
  * @info:
  **/
 public class App extends Application {
-
-    public static DatagramSocket mSocket;
-
     @Override
     public void onCreate() {
         super.onCreate();
+        OriLog.init(this, BuildConfig.DEBUG);
     }
 }

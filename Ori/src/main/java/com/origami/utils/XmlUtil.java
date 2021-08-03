@@ -1,5 +1,7 @@
 package com.origami.utils;
 
+import android.text.TextUtils;
+
 /**
  * @by: origami
  * @date: {2021/5/6}
@@ -7,21 +9,25 @@ package com.origami.utils;
  **/
 public class XmlUtil {
 
-    private boolean withHead;
+    private final String rootPoint;
 
-    private StringBuilder builder;
+    private final StringBuilder builder;
 
-    private XmlUtil(boolean withHead){
-        if(withHead) {
-            builder = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<message_content>\n");
-        }else {
+    private XmlUtil(String rootPoint){
+        if(TextUtils.isEmpty(rootPoint)) {
             builder = new StringBuilder("");
+        }else {
+            builder = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<").append(rootPoint).append(">\n");
         }
-        this.withHead = withHead;
+        this.rootPoint = rootPoint;
     }
 
-    public static XmlUtil getInstance(boolean withHead){
-        return new XmlUtil(withHead);
+    public static XmlUtil getInstance(){
+        return new XmlUtil(null);
+    }
+
+    public static XmlUtil getInstance(String rootPoint){
+        return new XmlUtil(rootPoint);
     }
 
     public XmlUtil add_key_value(String key, Object value){
@@ -35,14 +41,14 @@ public class XmlUtil {
     public XmlUtil add_key_xmlValue(String key, XmlUtil value){
         builder
                 .append("<").append(key).append(">\n")
-                .append(value.getString())
+                .append(value.getXML())
                 .append("</").append(key).append(">\n");
         return this;
     }
 
-    public String getString(){
-        if(withHead){
-            builder.append("</message_content>");
+    public String getXML(){
+        if(!TextUtils.isEmpty(rootPoint)){
+            builder.append("</").append(rootPoint).append(">");
         }
         return builder.toString();
     }

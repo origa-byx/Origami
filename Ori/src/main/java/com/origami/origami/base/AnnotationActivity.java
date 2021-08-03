@@ -6,6 +6,7 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,12 +18,15 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 
+import com.origami.log.OriLog;
+import com.origami.log.OriLogBean;
 import com.origami.origami.R;
 import com.origami.origami.base.annotation.BClick;
 import com.origami.origami.base.annotation.BContentView;
 import com.origami.origami.base.annotation.BView;
 import com.origami.origami.base.base_utils.BasePresenter;
 import com.origami.origami.base.base_utils.ToastMsg;
+import com.origami.utils.Ori;
 import com.origami.utils.StatusUtils;
 
 import java.lang.reflect.Field;
@@ -56,6 +60,8 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
+        Log.e("ORI",String.format("init -> %s", this.getClass().getSimpleName()));
+        Ori.v(String.format("init -> %s", this.getClass().getSimpleName()));
         BContentView contentView = getClass().getAnnotation(BContentView.class);
         if(contentView != null){
             setContentView(contentView.value());

@@ -46,6 +46,8 @@ android {
         pickFirst 'lib/arm64-v8a/libqrdatadecode.so'
         pickFirst 'lib/armeabi-v7a/liborigami.so'
         pickFirst 'lib/arm64-v8a/liborigami.so'
+        pickFirst 'lib/armeabi-v7a/libori_bitmap.so'
+        pickFirst 'lib/arm64-v8a/libori_bitmap.so'
     }
 
     sourceSets {
@@ -74,6 +76,7 @@ dependencies {
     implementation 'com.itextpdf:itextg:5.5.10'
     implementation 'com.madgag:scprov-jdk15on:1.47.0.2'
     implementation 'com.madgag:scpkix-jdk15on:1.47.0.2'
+    implementation 'com.github.lecho:hellocharts-android:v1.5.8'
 
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'

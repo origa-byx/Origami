@@ -33,30 +33,30 @@ public class WindowUtil {
     private View bindView;
 
     private final int navH;
-    private WindowManager window;
+    private final WindowManager window;
     private boolean showFlag = false;
     private final WindowManager.LayoutParams paramsWindow = new WindowManager.LayoutParams();
     private RelativeLayout.LayoutParams params;
 
     private ValueAnimator showAnimator;
 
-    private WindowUtil(Activity activity){
+    private WindowUtil(Activity activity, int status){
         window = activity.getWindowManager();
         rootLayout = new RelativeLayout(activity){
             @Override
-            public boolean onKeyDown(int keyCode, KeyEvent event) {
-                if(keyCode == KeyEvent.KEYCODE_BACK){
+            public boolean dispatchKeyEvent(KeyEvent event) {
+                if(event.getKeyCode() == KeyEvent.KEYCODE_BACK && WindowUtil.this.isShowing()){
                     WindowUtil.this.dismiss();
                     return true;
                 }
-                return super.onKeyDown(keyCode, event);
+                return super.dispatchKeyEvent(event);
             }
         };
         navH = StatusUtils.getNavigationBarHeight(activity);
         paramsWindow.width = WindowManager.LayoutParams.MATCH_PARENT;
         paramsWindow.height = WindowManager.LayoutParams.MATCH_PARENT;
         paramsWindow.format = PixelFormat.TRANSPARENT;
-        paramsWindow.flags = WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS |
+        paramsWindow.flags = status |
                 WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR |
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
         paramsWindow.type = WindowManager.LayoutParams.LAST_APPLICATION_WINDOW;
@@ -65,7 +65,11 @@ public class WindowUtil {
     }
 
     public static WindowUtil build(Activity activity){
-        return new WindowUtil(activity);
+        return new WindowUtil(activity, WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+    }
+
+    public static WindowUtil build(Activity activity, int window_layoutParams_status){
+        return new WindowUtil(activity, window_layoutParams_status);
     }
 
 

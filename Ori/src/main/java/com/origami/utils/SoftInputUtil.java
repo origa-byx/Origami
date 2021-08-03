@@ -145,8 +145,7 @@ public class SoftInputUtil {
             return 0;
         Resources resources = context.getResources();
         int resourceId = resources.getIdentifier("navigation_bar_height", "dimen", "android");
-        int height = resources.getDimensionPixelSize(resourceId);
-        return height;
+        return resources.getDimensionPixelSize(resourceId);
     }
 
     public static void showSoftInput(View view) {

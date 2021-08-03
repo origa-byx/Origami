@@ -20,6 +20,15 @@ add_library( # Sets the name of the library.
         # Provides a relative path to your source file(s).
         src/main/cpp/test.cpp)
 
+add_library( # Sets the name of the library.
+        ori_bitmap
+
+        # Sets the library as a shared library.
+        SHARED
+
+        # Provides a relative path to your source file(s).
+        src/main/cpp/bitmap_handler.cpp)
+
 #动态方式加载 STATIC：表示静态的.a的库 SHARED：表示.so的库。
 add_library(qrdatadecode SHARED IMPORTED)
 #设置要连接的so的相对路径 ${CMAKE_SOURCE_DIR}：表示CMake.txt的当前文件夹路径 ${ANDROID_ABI}：编译时会自动根据CPU架构去选择相应的库
@@ -45,8 +54,14 @@ find_library( # Sets the name of the path variable.
 
 target_link_libraries( # Specifies the target library.
         origami
-
-        # Links the target library to the log library
         qrdatadecode
+        # Links the target library to the log library
+        # included in the NDK.
+        ${log-lib})
+
+target_link_libraries( # Specifies the target library.
+        ori_bitmap
+        jnigraphics
+        # Links the target library to the log library
         # included in the NDK.
         ${log-lib})

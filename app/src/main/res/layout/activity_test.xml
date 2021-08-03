@@ -10,7 +10,11 @@
     <TextView
         android:id="@+id/jni_test"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="jni"/>
+        android:layout_height="match_parent" />
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/native_img"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
 </RelativeLayout>
