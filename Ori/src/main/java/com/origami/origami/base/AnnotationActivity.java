@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -14,10 +15,14 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 
+import com.origami.activity.OriImageSelect;
 import com.origami.log.OriLog;
 import com.origami.log.OriLogBean;
 import com.origami.origami.R;
@@ -44,16 +49,18 @@ import java.lang.reflect.Modifier;
  **/
 public abstract class AnnotationActivity extends AppCompatActivity implements View.OnClickListener {
 
+    protected final static int per_requestCode = 981028;
     //点击事件集合
     protected final SparseArray<Method> methodSparseArray = new SparseArray<>();
 
     private final int anTime = 1000;
 
-
     private ValueAnimator sMsgAnimator;
     private View sToastView;
 //    private int sToastView_H = 0;
     OriEventBus.Event showToastEvent;
+
+    private RequestPermissionNext next;
 
     public abstract void init(@Nullable Bundle savedInstanceState);
 
@@ -65,7 +72,13 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
         BContentView contentView = getClass().getAnnotation(BContentView.class);
         if(contentView != null){
             setContentView(contentView.value());
-        }else { setContentView(getLayout()); }
+        }else {
+            setContentView(getLayout());
+            setStatusBar();
+            init(savedInstanceState);
+            AnnotationActivityManager.addActivity(this);
+            return;
+        }
         Field[] fields = getClass().getDeclaredFields();
         for (Field field : fields) {
             BView bindMyView = field.getAnnotation(BView.class);
@@ -75,7 +88,7 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
                     if(field.getModifiers() != Modifier.PUBLIC && !accessible){
                         field.setAccessible(true);
                         field.set(this,findViewById(bindMyView.value()));
-                        field.setAccessible(accessible);
+                        field.setAccessible(false);
                     }else{
                         field.set(this,findViewById(bindMyView.value()));
                     }
@@ -100,6 +113,46 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
         AnnotationActivityManager.addActivity(this);
     }
 
+    public void checkPermissionAndThen(String[] permissions, RequestPermissionNext permissionNext){
+        if(!checkPermissionsAllGranted(permissions)){
+            this.next = permissionNext;
+            ActivityCompat.requestPermissions(this, permissions, per_requestCode);
+        }else if(permissionNext != null) {
+            permissionNext.next();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == per_requestCode) {
+            boolean isAllGranted = true;
+            for (int grantResult : grantResults) {
+                if (grantResult != PackageManager.PERMISSION_GRANTED) {
+                    isAllGranted = false;
+                    break;
+                }
+            }
+            if (isAllGranted) {
+                if(next != null){ next.next(); }
+            }else if(next != null) { next.failed(); }
+            next = null;
+        }
+    }
+
+    private boolean checkPermissionsAllGranted(String[] permissions) {
+        for (String permission : permissions) {
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                // 只要有一个权限没有被授予, 则直接返回 false
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 处理状态栏
+     */
     protected void setStatusBar(){
         StatusUtils.setImmerseStatus(this);
     }
@@ -113,7 +166,7 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
                 if(method.getModifiers() != Modifier.PUBLIC && !accessible){
                     method.setAccessible(true);
                     method.invoke(this);
-                    method.setAccessible(accessible);
+                    method.setAccessible(false);
                 }else{
                     method.invoke(this);
                 }

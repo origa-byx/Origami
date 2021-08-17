@@ -7,14 +7,21 @@
     android:layout_height="match_parent"
     tools:context=".TestActivity">
 
+    <com.origami.view.YuunaTextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:yuuna_text="这是测试文字测试"
+        app:yuuna_text_size="12sp"
+        app:yuuna_radius="200dp" />
+
     <TextView
         android:id="@+id/jni_test"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <androidx.appcompat.widget.AppCompatImageView
-        android:id="@+id/native_img"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+<!--    <androidx.appcompat.widget.AppCompatImageView-->
+<!--        android:id="@+id/native_img"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent" />-->
 
 </RelativeLayout>

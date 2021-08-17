@@ -35,6 +35,8 @@ import java.util.Random;
  **/
 public class OriClipImageView extends View {
 
+    //放缩的tanH函数中的斜率控制参数，影响每次放缩的实际大小，越小放缩越快
+    private float tanH_sc = 70f;
 
     private float mScale = 1f;//放缩结果参数
     private final float[] mTranslation = new float[]{0f,0f};//偏移参数
@@ -128,7 +130,7 @@ public class OriClipImageView extends View {
                             }
                             markX--;
                         }
-                        mScale =(float) Math.tanh((double) markX / 90) + 1;
+                        mScale =(float) Math.tanh((double) markX / tanH_sc) + 1;
                         pointSparseArray.put(key_0, point_now_0);
                         pointSparseArray.put(key_1, point_now_1);
                         if(mScale < minScale){
@@ -244,6 +246,14 @@ public class OriClipImageView extends View {
                 postInvalidate();
             }
         });
+    }
+
+    /**
+     * 设置此参数
+     * @param tanH_sc 放缩的tanH函数中的斜率控制参数，影响每次放缩的实际大小，越小放缩越快，参考值 90
+     */
+    public void setTanH_sc(float tanH_sc) {
+        this.tanH_sc = tanH_sc;
     }
 
     /**

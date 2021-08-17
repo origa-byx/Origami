@@ -8,7 +8,7 @@
     android:background="#000000"
     tools:context="com.origami.activity.OriImageActivity">
 
-    <com.origami.view.OriClipImageView
+    <com.origami.view.OriImageDetailView
         android:id="@+id/ori_image"
         android:transitionName="image"
         android:layout_width="match_parent"

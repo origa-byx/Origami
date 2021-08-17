@@ -5,12 +5,16 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaScannerConnection;
+import android.os.Build;
 import android.os.Environment;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 
 import androidx.annotation.IntRange;
+import androidx.annotation.RequiresApi;
 
 import com.origami.log.OriLog;
 import com.origami.log.OriLogBean;
@@ -61,6 +65,34 @@ public class Ori {
         return "";
     }
 
+    /**
+     * 震动
+     * @param context
+     * @param time  震动时长
+     */
+    public static void vibrator(Context context, long time){
+        Vibrator vibrator = getVibrator(context);
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            vibrator.vibrate(VibrationEffect.createOneShot(time, VibrationEffect.DEFAULT_AMPLITUDE));
+        }else {
+            vibrator.vibrate(time);
+        }
+    }
+
+    /**
+     * 获取震动控制类
+     * @param context
+     * @return  震动类
+     */
+    public static Vibrator getVibrator(Context context){
+        return (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+    }
+
+    /**
+     * 生成随机字符串 带时间
+     * @param length    时间附加的随机字符长度
+     * @return
+     */
     public static String getRandomString(@IntRange(from = 6) int length){
         String ran = "abcdefghijkmlnopqrstuvwxyz123456789";
         Random random = new Random();
@@ -131,7 +163,8 @@ public class Ori {
     }
 
     /**
-     * 保存位图
+     * 保存位图  默认根目录下以app名命名的image文件夹下
+     * @param isRandomFile  是否生成随机文件夹防止单一文件夹类子节点过多
      * @return null ：保存失败
      */
     public static String saveBitmapWithAppNamePath(Bitmap mBitmap, Context context , boolean isRandomFile) {
@@ -175,6 +208,11 @@ public class Ori {
         return savePath;
     }
 
+    /**
+     * 获取统一保存路径
+     * @param context
+     * @return
+     */
     public static String getSaveFilePath(Context context){
         int labelRes = context.getApplicationInfo().labelRes;
         if(labelRes == 0){
@@ -237,7 +275,7 @@ public class Ori {
     }
 
     /**
-     *
+     * 检测服务是否正在运行
      * @param mContext
      * @param className  -> {@link Class#getName()}
      * @return

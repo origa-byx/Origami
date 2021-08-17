@@ -9,12 +9,14 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 
 import com.origami.origami.base.annotation.BClick;
 import com.origami.origami.base.annotation.BContentView;
 import com.origami.origami.base.annotation.BView;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -25,15 +27,15 @@ import java.lang.reflect.Modifier;
  * @date 2020/12/3
  * @description:
  **/
-public abstract class AnnotationFragment extends Fragment implements View.OnClickListener {
+public abstract class AnnotationFragment<T extends AnnotationActivity> extends Fragment implements View.OnClickListener {
 
     protected final SparseArray<Method> methodSparseArray = new SparseArray<>();
-    protected Context mContext;
+    protected WeakReference<T> mContext;
 
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-        this.mContext = context;
+        this.mContext = new WeakReference<>((T) context);
     }
 
     @Nullable
@@ -47,14 +49,16 @@ public abstract class AnnotationFragment extends Fragment implements View.OnClic
                 BView bindMyView = field.getAnnotation(BView.class);
                 if(bindMyView != null){
                     boolean accessible = field.isAccessible();
-                    if(field.getModifiers() != Modifier.PUBLIC && !accessible){
-                        field.setAccessible(true);
-                        try {
+                    try {
+                        if(field.getModifiers() != Modifier.PUBLIC && !accessible){
+                            field.setAccessible(true);
                             field.set(this,view.findViewById(bindMyView.value()));
-                        } catch (IllegalAccessException e) {
-                            e.printStackTrace();
+                            field.setAccessible(false);
+                        }else {
+                            field.set(this,view.findViewById(bindMyView.value()));
                         }
-                        field.setAccessible(accessible);
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
                     }
                 }
             }
@@ -79,6 +83,12 @@ public abstract class AnnotationFragment extends Fragment implements View.OnClic
 
     public abstract void init(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState);
 
+
+    public void checkPermissionAndThen(String[] permissions, RequestPermissionNext permissionNext){
+        T t = mContext.get();
+        if(t != null){ t.checkPermissionAndThen(permissions, permissionNext); }
+    }
+
     @Override
     public void onDetach() {
         super.onDetach();
@@ -95,7 +105,7 @@ public abstract class AnnotationFragment extends Fragment implements View.OnClic
                 if(method.getModifiers() != Modifier.PUBLIC && !accessible){
                     method.setAccessible(true);
                     method.invoke(this);
-                    method.setAccessible(accessible);
+                    method.setAccessible(false);
                 }else{
                     method.invoke(this);
                 }

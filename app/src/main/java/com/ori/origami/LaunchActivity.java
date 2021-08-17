@@ -30,6 +30,7 @@ public class LaunchActivity extends AnnotationActivity {
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.SYSTEM_ALERT_WINDOW,
             Manifest.permission.ACCESS_WIFI_STATE,
+            Manifest.permission.CAMERA,
             Manifest.permission.CHANGE_WIFI_STATE,
             Manifest.permission.MOUNT_UNMOUNT_FILESYSTEMS,
             Manifest.permission.WRITE_EXTERNAL_STORAGE,};
@@ -39,6 +40,7 @@ public class LaunchActivity extends AnnotationActivity {
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.SYSTEM_ALERT_WINDOW,
             Manifest.permission.ACCESS_WIFI_STATE,
+            Manifest.permission.CAMERA,
             Manifest.permission.CHANGE_WIFI_STATE,
             Manifest.permission.MOUNT_UNMOUNT_FILESYSTEMS,
             Manifest.permission.WRITE_EXTERNAL_STORAGE,};
@@ -86,7 +88,7 @@ public class LaunchActivity extends AnnotationActivity {
     }
 
     private void goNext(){
-        Intent intent = new Intent(LaunchActivity.this,TestActivity.class);
+        Intent intent = new Intent(LaunchActivity.this, TestActivity.class);
         LaunchActivity.this.startActivity(intent);
         LaunchActivity.this.finish();
     }

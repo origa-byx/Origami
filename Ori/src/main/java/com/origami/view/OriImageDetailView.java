@@ -27,8 +27,10 @@ import java.util.Random;
  * @date: {2021-05-27}
  * @info:
  **/
-public class ImageDetailView extends View {
+public class OriImageDetailView extends View {
 
+    private final int handler_taken = 1216;
+    private float tanH_sc = 70f;
 
     private final static String TAG = "ImageDetailView";
 
@@ -55,15 +57,15 @@ public class ImageDetailView extends View {
 
     private OnLongClickListener mLongClickListener;
 
-    public ImageDetailView(Context context) {
+    public OriImageDetailView(Context context) {
         this(context,null);
     }
 
-    public ImageDetailView(Context context, AttributeSet attrs) {
+    public OriImageDetailView(Context context, AttributeSet attrs) {
         this(context, attrs,0);
     }
 
-    public ImageDetailView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public OriImageDetailView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 
@@ -72,7 +74,7 @@ public class ImageDetailView extends View {
         int actionMasked = event.getActionMasked();
         switch (actionMasked){
             case MotionEvent.ACTION_POINTER_DOWN:
-                simPoint = false;
+                setSimPointFalse();
                 int index_pointer = event.getActionIndex();
                 pointSparseArray.put(event.getPointerId(index_pointer), new Point(
                         (int) event.getX(index_pointer),
@@ -85,17 +87,14 @@ public class ImageDetailView extends View {
                 pointSparseArray.put(event.getPointerId(index), new Point(
                         (int) event.getX(index),
                         (int) event.getY(index) ));
-                if(mLongClickListener != null) {
-                    postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (simPoint) {
-                                canMove = false;
-                                simPoint = false;// 这里是为了防止单击和长按一起触发了
-                                mLongClickListener.onLongClick(ImageDetailView.this);
-                            }
+                if(mLongClickListener != null && getHandler() != null) {
+                    getHandler().postDelayed(() -> {
+                        if (simPoint) {
+                            canMove = false;
+                            simPoint = false;// 这里是为了防止单击和长按一起触发了
+                            mLongClickListener.onLongClick(OriImageDetailView.this);
                         }
-                    }, 1000);
+                    },handler_taken, 1000);
                 }
                 return true;
             case MotionEvent.ACTION_MOVE:
@@ -107,7 +106,7 @@ public class ImageDetailView extends View {
                     float moveX = event.getX(0) - point.x;
                     float moveY = event.getY(0) - point.y;
                     if(Math.abs(moveX) > 3 || Math.abs(moveY) > 3){
-                        simPoint = false;
+                        setSimPointFalse();
                         mTranslation[0] += moveX / mScale;
                         mTranslation[1] += moveY / mScale;
                         point.x = (int) event.getX(0);
@@ -118,7 +117,7 @@ public class ImageDetailView extends View {
                         return true;
                     }
                 }else {
-                    simPoint = false;
+                    setSimPointFalse();
                     if (size == 2) {//双指缩放
                         int key_0 = event.getPointerId(0);
                         int key_1 = event.getPointerId(1);
@@ -138,7 +137,7 @@ public class ImageDetailView extends View {
                                 }
                                 markX--;
                             }
-                            mScale = (float) Math.tanh((double) markX / 90) + 1;
+                            mScale = (float) Math.tanh((double) markX / tanH_sc) + 1;
                             pointSparseArray.put(key_0, point_now_0);
                             pointSparseArray.put(key_1, point_now_1);
                             if (mScale < minScale) {
@@ -170,6 +169,22 @@ public class ImageDetailView extends View {
         }
         return true;
 //        return super.onTouchEvent(event);
+    }
+
+
+    private void setSimPointFalse(){
+        simPoint = false;
+        if(getHandler() != null){
+            getHandler().removeCallbacksAndMessages(handler_taken);
+        }
+    }
+
+    /**
+     * 设置此参数
+     * @param tanH_sc 放缩的tanH函数中的斜率控制参数，影响每次放缩的实际大小，越小放缩越快，参考值 90
+     */
+    public void setTanH_sc(float tanH_sc) {
+        this.tanH_sc = tanH_sc;
     }
 
     /**
@@ -234,8 +249,8 @@ public class ImageDetailView extends View {
             public void run() {
                 Matrix matrix = new Matrix();
                 float[] scale = new float[]{1f, 1f};
-                if(bm.getWidth() < getW()){ scale[0] = (float) getW() / (float) bm.getWidth(); }
-                if(bm.getHeight() < getH()){ scale[1] = (float) getH() / (float) bm.getHeight(); }
+                scale[0] = (float) getW() / (float) bm.getWidth();
+                scale[1] = (float) getH() / (float) bm.getHeight();
                 float s = Math.min(scale[0],scale[1]);
                 matrix.postScale(s,s);
                 mBitmap = Bitmap.createBitmap(bm,0,0,bm.getWidth(),bm.getHeight(),matrix,true);
