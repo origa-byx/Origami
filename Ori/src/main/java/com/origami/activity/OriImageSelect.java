@@ -1,19 +1,27 @@
 package com.origami.activity;
 
 import android.animation.ValueAnimator;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.Animation;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import androidx.annotation.ColorRes;
+import androidx.annotation.DrawableRes;
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -34,28 +42,37 @@ import com.origami.utils.Dp2px;
 import com.origami.utils.Ori;
 import com.origami.utils.ProviderImageUtils;
 import com.origami.utils.StatusUtils;
+import com.origami.view.OriRecyclerView;
+import com.origami.view.OriRelativeLayout;
+import com.origami.view.TouchHandler;
+import com.origami.window.WindowUtil;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * @by: origami
  * @date: {2021-08-04}
- * @info:  图片选择器
+ * @info:  图片选择器  return: String[]  key : paths
  **/
-public class OriImageSelect extends AnnotationActivity {
+public class OriImageSelect extends AnnotationActivity implements TouchHandler {
 
     public static final String RESULT_KEY = "paths";
 
     TextView _ori__cancel, _ori__select_place, _ori__complete;
-    RecyclerView _ori__recyclerView, _ori__recyclerView_select_place;
+    RecyclerView _ori__recyclerView_select_place;
+    OriRecyclerView _ori__recyclerView;
+    OriRelativeLayout _ori__top_bar;
 
     public static Builder builder(){ return new Builder(); }
 
     public static class Builder implements Serializable {
+        Set<String> supportType = new HashSet<>();
         //默认选一张
         int selectNum = 1;
         //默认请求码200
@@ -64,6 +81,12 @@ public class OriImageSelect extends AnnotationActivity {
         boolean canPre = false;
         //默认3张一行
         int rowShowNum = 3;
+        //背景
+        private int background = 0;
+        //背景颜色 （优先应用背景，如果有）
+        private int color = Color.parseColor("#212121");
+        private final int[] text_colors = new int[]{Color.parseColor("#212121"), Color.parseColor("#eeeeee")};
+
         private Builder(){ }
 
         /**
@@ -105,7 +128,58 @@ public class OriImageSelect extends AnnotationActivity {
             return this;
         }
 
+        /**
+         * 设置背景
+         * @param background
+         * @return
+         */
+        public Builder setBackgroundDrawable(@DrawableRes int background){
+            this.background = background;
+            return this;
+        }
+
+        /**
+         * 设置背景颜色
+         * @param color
+         * @return
+         */
+        public Builder setBackgroundColor(@ColorRes int color){
+            this.color = color;
+            return this;
+        }
+
+        /**
+         * 设置界面按钮颜色
+         * @param color_in
+         * @param color_out
+         * @return
+         */
+        public Builder setTextColors(int color_in, int color_out) {
+            text_colors[0] = color_in;
+            text_colors[1] = color_out;
+            return this;
+        }
+
+        public Builder addSupportGIF() {
+            supportType.add("image/gif");
+            return this;
+        }
+
+        public Builder addSupportType(String mimeType){
+            supportType.add(mimeType);
+            return this;
+        }
+
         public void build(Activity activity){
+            supportType.add("image/jpeg");
+            supportType.add("image/png");
+//            supportType.add("image/webp");
+            Intent intent = new Intent(activity, OriImageSelect.class);
+            intent.putExtra("builder", this);
+            activity.startActivityForResult(intent, requestCode);
+        }
+
+        public void buildWithNotInitSupportJpegAndPng(Activity activity){
             Intent intent = new Intent(activity, OriImageSelect.class);
             intent.putExtra("builder", this);
             activity.startActivityForResult(intent, requestCode);
@@ -123,16 +197,12 @@ public class OriImageSelect extends AnnotationActivity {
 
     private final ValueAnimator animation = new ValueAnimator();
     private boolean isShowSelectPlace = false;
-    private final float defTY = -Dp2px.dp2px(50);
+    private final float defTY = -Dp2px.dp2px(100);
     private final Point screenP = new Point();
     int dp5 = Dp2px.dp2px(1);
 
     @Override
     public void init(@Nullable Bundle savedInstanceState) {
-        Intent intent = getIntent();
-        if(intent == null){ finish(); return; }
-        builder = ((Builder) intent.getSerializableExtra("builder"));
-        if(builder == null){ finish(); return; }
         getDisplay().getSize(screenP);
         bindViewAndEvent();
         initRecyclerView();
@@ -147,12 +217,13 @@ public class OriImageSelect extends AnnotationActivity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                ProviderImageUtils.ResultData resultData = ProviderImageUtils.getImagesPathList(OriImageSelect.this);
+                ProviderImageUtils.ResultData resultData = ProviderImageUtils.getImagesPathList(OriImageSelect.this, builder.supportType.toArray(new String[0]));
                 pathList = resultData.dates;
                 for (String s : resultData.keys) {
                     SelectPlaceAdapter.AdapterData data = new SelectPlaceAdapter.AdapterData();
                     data.text = s;
                     data.image = Objects.requireNonNull(pathList.get(s)).get(0);
+                    data.num = Objects.requireNonNull(pathList.get(s)).size();
                     adapter_SelectData.add(data);
                 }
                 adapter_ImageData.clear();
@@ -175,7 +246,7 @@ public class OriImageSelect extends AnnotationActivity {
                 //imagesList是你的图片地址列表
                 if(position < adapter_ImageData.size()){
                     //告诉RecyclerViewPreloader每个item项需要加载的图片url集合
-                    return adapter_ImageData.subList(position, position+1);
+                    return adapter_ImageData.subList(position, position + 1);
                 }else {
                     return adapter_ImageData.subList(adapter_ImageData.size() - 1, adapter_ImageData.size());
                 }
@@ -209,15 +280,34 @@ public class OriImageSelect extends AnnotationActivity {
         _ori__recyclerView.addOnScrollListener(preloader);
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private void bindViewAndEvent() {
         _ori__cancel = findViewById(R.id._ori__cancel);
         _ori__select_place = findViewById(R.id._ori__select_place);
         _ori__complete = findViewById(R.id._ori__complete);
+        _ori__top_bar = findViewById(R.id._ori__top_bar);
+        _ori__select_place.setBackground(Ori.getDefSelectorBackgroundButtonDrawable(
+                this, builder.text_colors[0], builder.text_colors[1], true));
+        _ori__select_place.setTextColor(Ori.getSelectorColorStateList(builder.text_colors[0], builder.text_colors[1], true));
+        _ori__complete.setBackground(Ori.getDefSelectorBackgroundButtonDrawable(
+                this, builder.text_colors[0], builder.text_colors[1], true));
+        _ori__complete.setTextColor(Ori.getSelectorColorStateList(builder.text_colors[0], builder.text_colors[1], true));
         _ori__recyclerView = findViewById(R.id._ori__recyclerView);
         _ori__recyclerView_select_place = findViewById(R.id._ori__recyclerView_select_place);
         _ori__cancel.setOnClickListener(this);
         _ori__select_place.setOnClickListener(this);
         _ori__complete.setOnClickListener(this);
+        _ori__recyclerView.setDispatchTouchHandler(this);
+        _ori__top_bar.setDispatchTouchHandler(this);
+    }
+
+    @Override
+    public Boolean handlerTouchEvent(MotionEvent ev) {
+        if(ev.getAction() == MotionEvent.ACTION_DOWN && isShowSelectPlace){
+            closeSelect();
+            return false;
+        }
+        return null;
     }
 
     public void refreshBySelect(String key, String name){
@@ -287,10 +377,29 @@ public class OriImageSelect extends AnnotationActivity {
     @Override
     protected void setStatusBar() {
         super.setStatusBar();
+        Intent intent = getIntent();
+        if(intent == null){ finish(); return; }
+        builder = ((Builder) intent.getSerializableExtra("builder"));
+        if(builder == null){ finish(); return; }
         View contentView = this.getWindow().getDecorView()
                 .findViewById(android.R.id.content);
-        contentView.setBackground(getResources().getDrawable(R.drawable._status_bar_color));
+        if(builder.background != 0){
+            contentView.setBackground(getResources().getDrawable(builder.background));
+        }else {
+            GradientDrawable gradientDrawable =
+                    Ori.getGradientDrawable(new int[]{builder.color, Color.TRANSPARENT, Color.TRANSPARENT});
+            contentView.setBackground(gradientDrawable);
+        }
         contentView.setPadding(0, StatusUtils.getStatusBarHeight(this), 0, 0);
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if(event.getKeyCode() == KeyEvent.KEYCODE_BACK && isShowSelectPlace){
+            closeSelect();
+            return true;
+        }
+        return super.dispatchKeyEvent(event);
     }
 
     @Override

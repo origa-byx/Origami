@@ -2,6 +2,8 @@ plugins {
     id 'com.android.library'
 }
 
+def version_name = "1.0.0"
+
 android {
     compileSdkVersion 30
     buildToolsVersion "30.0.3"
@@ -9,9 +11,8 @@ android {
     defaultConfig {
         minSdkVersion 21
         targetSdkVersion 30
-        versionCode 1
-        versionName "1.0"
-
+        versionCode ((int) Integer.parseInt(version_name.replaceAll("\\.", "")))
+        versionName version_name
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
     }
@@ -22,9 +23,27 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    //打包 AAR 打包源码进去
+    tasks.withType(Jar){jarTask->
+        if(jarTask.name == 'packageReleaseJar'){
+            jarTask.from android.sourceSets.main.java.srcDirs
+        }
+    }
+
+    //打包输出路径
+    libraryVariants.all { variant ->
+        variant.outputs.all { output ->
+            def outputFile = output.outputFile
+            if (outputFile != null && outputFile.name.endsWith('.aar')) {
+                outputFileName = "${variant.name}_${version_name}_${variant.buildType.name}.aar"
+            }
+        }
     }
 }
 

@@ -15,8 +15,8 @@ import java.util.Date;
  **/
 public class OriLogBean {
 
-    private static final String[] safeArr = new String[]{"<",">","&"};
-    private static final String[] replaceArr = new String[]{"&lt;","&gt;","&amp;"};
+    private static final String[] safeArr = new String[]{"&","<",">"};
+    private static final String[] replaceArr = new String[]{"&amp;","&lt;","&gt;"};
 
     public static final String BASE_HTML = "<style>" +
             "body{padding:20px}" +

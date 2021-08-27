@@ -2,8 +2,18 @@ package com.origami.utils;
 
 import android.app.ActivityManager;
 import android.content.Context;
+import android.content.res.ColorStateList;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.LayerDrawable;
+import android.graphics.drawable.LevelListDrawable;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.StateListDrawable;
 import android.media.MediaScannerConnection;
 import android.os.Build;
 import android.os.Environment;
@@ -13,16 +23,20 @@ import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 
+import androidx.annotation.AttrRes;
+import androidx.annotation.ColorRes;
 import androidx.annotation.IntRange;
 import androidx.annotation.RequiresApi;
 
 import com.origami.log.OriLog;
 import com.origami.log.OriLogBean;
+import com.origami.origami.R;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.DatagramSocket;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Calendar;
@@ -86,6 +100,88 @@ public class Ori {
      */
     public static Vibrator getVibrator(Context context){
         return (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+    }
+
+    /**
+     * 获取渐变色 Drawable
+     * @param colors 渐变颜色组
+     * @return 渐变色
+     */
+    public static GradientDrawable getGradientDrawable(int[] colors){
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setShape(GradientDrawable.RECTANGLE);
+        drawable.setColors(colors);
+        drawable.setGradientType(GradientDrawable.LINEAR_GRADIENT);
+        drawable.setOrientation(GradientDrawable.Orientation.TOP_BOTTOM);
+        drawable.setSize(50,50);
+        return drawable;
+    }
+
+    /**
+     * selector Drawable
+     * @param drawable_ok
+     * @param status
+     * @param drawable_notOk
+     * @return
+     */
+    public static StateListDrawable getStateListDrawable(Drawable drawable_ok, @AttrRes int status, Drawable drawable_notOk){
+        StateListDrawable drawable = new StateListDrawable();
+        drawable.addState(new int[]{ status }, drawable_ok);
+        drawable.addState(new int[]{ -status }, drawable_notOk);
+        return drawable;
+    }
+
+    /**
+     * 大概就是生成默认的selector drawable 给 一个按钮
+     * @param context
+     * @param color_out
+     * @param color_in
+     * @param okIsHasBor
+     * @return
+     */
+    public static StateListDrawable getDefSelectorBackgroundButtonDrawable(Context context, int color_out, int color_in, boolean okIsHasBor){
+        Drawable drawable = context.getResources().getDrawable(R.drawable._ori_back_blue_per);
+        Drawable drawable_anti = context.getResources().getDrawable(R.drawable._ori_back_blue_nor);
+        if(drawable instanceof LayerDrawable){
+            Drawable drawable_son1 = ((LayerDrawable) drawable).getDrawable(0);
+            Drawable drawable_son2 = ((LayerDrawable) drawable).getDrawable(1);
+            if(drawable_son1 instanceof GradientDrawable){
+                ((GradientDrawable) drawable_son1).setColor(color_out);
+            }
+            if(drawable_son2 instanceof GradientDrawable){
+                ((GradientDrawable) drawable_son2).setColor(color_in);
+            }
+        }
+        if(drawable_anti instanceof GradientDrawable){
+            ((GradientDrawable) drawable_anti).setColor(color_out);
+        }
+        if(okIsHasBor){
+            return getStateListDrawable(drawable_anti, android.R.attr.state_pressed, drawable);
+        }else {
+            return getStateListDrawable(drawable, android.R.attr.state_pressed, drawable_anti);
+        }
+    }
+
+    /**
+     * 配合{@link #getDefSelectorBackgroundButtonDrawable(Context, int, int, boolean)} }
+     *      用来生成颜色的
+     * @param color_nor
+     * @param color_per
+     * @param okIsHasBor
+     * @return
+     */
+    public static ColorStateList getSelectorColorStateList(int color_nor, int color_per, boolean okIsHasBor){
+        ColorDrawable drawable_nor = new ColorDrawable();
+        ColorDrawable drawable_per = new ColorDrawable();
+        drawable_nor.setColor(color_nor);
+        drawable_per.setColor(color_per);
+        int[] colors = new int[2];
+        if(okIsHasBor){
+            colors[1] = color_nor; colors[0] = color_per;
+        }else {
+            colors[0] = color_nor; colors[1] = color_per;
+        }
+        return new ColorStateList(new int[][]{{ android.R.attr.state_pressed }, {}}, colors);
     }
 
     /**

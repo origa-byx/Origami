@@ -13,6 +13,6 @@ public class NativeBitmap {
         System.loadLibrary("ori_bitmap");
     }
 
-    public static native int testBitmap(Bitmap bitmap);
+    public static native int testBitmap(Bitmap bitmap, int radius);
 
 }

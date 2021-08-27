@@ -5,9 +5,10 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <RelativeLayout
+    <com.origami.view.OriRelativeLayout
+        android:id="@+id/_ori__top_bar"
         android:layout_width="match_parent"
-        android:layout_height="60dp">
+        android:layout_height="55dp">
 
         <TextView
             android:id="@+id/_ori__cancel"
@@ -32,7 +33,6 @@
             android:maxLines="1"
             android:ellipsize="end"
             android:paddingHorizontal="10dp"
-            style="@style/_ori_botton_b_anti"
             android:gravity="center"
             android:textSize="16sp"/>
 
@@ -45,18 +45,17 @@
             android:layout_marginEnd="15dp"
             android:text="完成"
             android:paddingHorizontal="10dp"
-            style="@style/_ori_botton_b_anti"
             android:gravity="center"
             android:textSize="16sp"/>
 
-    </RelativeLayout>
+    </com.origami.view.OriRelativeLayout>
 
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <androidx.recyclerview.widget.RecyclerView
+        <com.origami.view.OriRecyclerView
             android:id="@+id/_ori__recyclerView"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
@@ -66,8 +65,8 @@
             android:id="@+id/_ori__recyclerView_select_place"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:paddingTop="50dp"
-            android:translationY="-50dp"/>
+            android:paddingTop="100dp"
+            android:translationY="-100dp"/>
 
     </FrameLayout>
 

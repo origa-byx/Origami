@@ -8,6 +8,7 @@
     tools:context=".TestActivity">
 
     <com.origami.view.YuunaTextView
+        android:id="@+id/uii"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:yuuna_text="这是测试文字测试"

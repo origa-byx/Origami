@@ -58,6 +58,7 @@ public class SelectImageAdapter extends RecyclerView.Adapter<SelectImageAdapter.
             public void onClick(View v) {
                 int position = viewHolder.getAdapterPosition();
                 String path = dates.get(position);
+                Log.e("SELECT","path->" + path);
                 if(!canPre && maxSelect <= 1){
                     selectPaths.add(path);
                     context.selectOk();
@@ -78,13 +79,7 @@ public class SelectImageAdapter extends RecyclerView.Adapter<SelectImageAdapter.
             viewHolder.imageView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-//                    Glide.with(context).asBitmap().load(dates.get(viewHolder.getAdapterPosition())).into(new BitmapImageViewTarget(viewHolder.imageView) {
-//                        @Override
-//                        protected void setResource(Bitmap resource) {
-//                            OriImageActivity.startThisAct(context, viewHolder.imageView, resource);
-//                        }
-//                    });
-                    OriImageActivity.startThisAct(context, viewHolder.imageView,true, dates.get(viewHolder.getAdapterPosition()));
+                    OriImageActivity.startThisAct(context, dates.get(viewHolder.getAdapterPosition()), false, viewHolder.imageView);
                 }
             });
             viewHolder.textView.setOnClickListener(listener);
@@ -100,13 +95,11 @@ public class SelectImageAdapter extends RecyclerView.Adapter<SelectImageAdapter.
         String path = dates.get(position);
         if(selectPaths.contains(path)){
             holder.textView.setBackground(context.getResources().getDrawable(R.mipmap.ori_select_ok));
-            if(maxSelect > 1){
-                holder.textView.setText(String.valueOf(selectPaths.indexOf(path) + 1));
-            }
+            if(maxSelect > 1){ holder.textView.setText(String.valueOf(selectPaths.indexOf(path) + 1)); }
         }else {
             holder.textView.setBackground(context.getResources().getDrawable(R.mipmap.ori_select_press));
+            holder.textView.setText("");
         }
-        Log.e("ORI","ii->"+path);
         Glide.with(context).load(path).thumbnail(0.3f).into(holder.imageView);
     }
 

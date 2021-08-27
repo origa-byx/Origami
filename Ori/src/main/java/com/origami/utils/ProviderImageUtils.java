@@ -27,13 +27,23 @@ public class ProviderImageUtils {
 
     public static int ONE_PAGE_NUM = 20;
 
-    public static ResultData getImagesPathList(Context context){
+    public static ResultData getImagesPathList(Context context, String[] supportType){
+        String selection = null;
+        if(supportType != null && supportType.length != 0) {
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < supportType.length; i++) {
+                builder.append(MediaStore.Images.Media.MIME_TYPE)
+                        .append("=? ");
+                if(i != supportType.length - 1){ builder.append("or "); }
+            }
+            selection = builder.toString();
+        }
         ContentResolver contentResolver = context.getContentResolver();
         Cursor cursor = contentResolver.query(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 null,
-                null,
-                null,
+                selection,
+                supportType,
                 MediaStore.Images.Media.DATE_MODIFIED + " DESC"
         );
         ResultData resultData = new ResultData();

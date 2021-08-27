@@ -30,13 +30,22 @@ import java.util.Random;
  * @by: origami
  * @date: {2021/4/20}
  * @info:
+ *
+ *  123.123.123.123:123 - 55.55.55.55:6000 - 192.168.1.100:321
+ *  123.123.123.123:123 - 44.44.44.44:7000 - 192.168.7.200:321
+ *
+ *  192.168.7.200:321 - 44.44.44.44:7000 - 55.55.55.55:6000
+ *  192.168.1.100:321 - 55.55.55.55:6000 - 44.44.44.44:7000
+ *
+ *  192.168.1.100:321 - 55.55.55.55:6000 - 44.44.44.44:7000 - 192.168.7.200:321
+ *
  *       {@link #setImageBitmap(Bitmap)} -> 设置待剪切图片
  *       {@link #getClipBitmap()} or {@link #getClipPath(String, boolean)} -> 获取剪切结果
  **/
 public class OriClipImageView extends View {
 
     //放缩的tanH函数中的斜率控制参数，影响每次放缩的实际大小，越小放缩越快
-    private float tanH_sc = 70f;
+    private float tanH_sc = 50f;
 
     private float mScale = 1f;//放缩结果参数
     private final float[] mTranslation = new float[]{0f,0f};//偏移参数

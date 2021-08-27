@@ -29,6 +29,7 @@ public class SelectPlaceAdapter extends RecyclerView.Adapter<SelectPlaceAdapter.
     public static class AdapterData{
         public String text;
         public String image;
+        public int num;
     }
     final OriImageSelect context;
     final List<AdapterData> dates;
@@ -72,6 +73,7 @@ public class SelectPlaceAdapter extends RecyclerView.Adapter<SelectPlaceAdapter.
         }else {
             name = adapterData.text;
         }
+        holder.numView.setText(String.format("（%s）", adapterData.num));
         holder.textView.setText(name);
     }
 
@@ -83,12 +85,13 @@ public class SelectPlaceAdapter extends RecyclerView.Adapter<SelectPlaceAdapter.
     static class ViewHolder extends RecyclerView.ViewHolder{
 
         ImageView imageView;
-        TextView textView;
+        TextView textView, numView;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             imageView = itemView.findViewById(R.id.__ori_show_image);
             textView = itemView.findViewById(R.id.__ori_show_text);
+            numView = itemView.findViewById(R.id.__ori_show_num);
         }
     }
 

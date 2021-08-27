@@ -18,7 +18,7 @@ void gaussianBlur(unsigned char * img, unsigned  int x, unsigned int y, unsigned
 
 extern "C" {
     JNIEXPORT jint JNICALL
-    Java_com_ori_origami_NativeBitmap_testBitmap(JNIEnv *env, jclass clazz, jobject bitmap) {
+    Java_com_ori_origami_NativeBitmap_testBitmap(JNIEnv *env, jclass clazz, jobject bitmap, jint radius) {
         AndroidBitmapInfo info = {0, 0, 0, 0, 0};
         if (AndroidBitmap_getInfo(env, bitmap, &info) != ANDROID_BITMAP_RESULT_SUCCESS) { return -1; }
         void *px;
@@ -32,7 +32,7 @@ extern "C" {
 //        int re = pthread_create(&thread_id_bitmap, NULL, gauss_thread, NULL);
 //        if(re){ return -3; }
 //        pthread_join(thread_id_bitmap, NULL); //同步 -> 参考 wait notify
-        gaussianBlur((unsigned char*)px, 0, 0, info.width, info.height, comp, 50);
+        gaussianBlur((unsigned char*)px, 0, 0, info.width, info.height, comp, radius);
         AndroidBitmap_unlockPixels(env, bitmap);
         return 0;
     }
@@ -47,7 +47,7 @@ void gaussianBlur(unsigned char * img, unsigned  int x, unsigned int y, unsigned
     memset (kernel, 0, kernelSize* sizeof (unsigned int ));
     unsigned int (*mult)[256] = (unsigned int (*)[256]) malloc (kernelSize * 256 * sizeof (unsigned int ));
     memset (mult, 0, kernelSize * 256 * sizeof (unsigned int ));
-    unsigned    int sum = 0;
+    unsigned int sum = 0;
     for (i = 1; i < radius; i++){
         unsigned int szi = radius - i;
         kernel[radius + i] = kernel[szi] = szi*szi;
@@ -57,18 +57,16 @@ void gaussianBlur(unsigned char * img, unsigned  int x, unsigned int y, unsigned
         }
     }
     kernel[radius] = radius*radius;
-    sum += kernel[radius];
     for (j = 0; j < 256; j++){
-
         mult[radius][j] = kernel[radius] * j;
     }
 
     unsigned int   cr, cg, cb;
     unsigned int   xl, yl, yi, ym, riw;
     unsigned int   read, ri, p,   n;
-    unsigned    int imgWidth = w;
-    unsigned    int imgHeight = h;
-    unsigned    int imageSize = imgWidth*imgHeight;
+    unsigned int imgWidth = w;
+    unsigned int imgHeight = h;
+    unsigned int imageSize = imgWidth*imgHeight;
     unsigned char * rgb = (unsigned char *) malloc ( sizeof (unsigned char ) * imageSize * 3);
     unsigned char * r = rgb;
     unsigned char * g = rgb + imageSize;

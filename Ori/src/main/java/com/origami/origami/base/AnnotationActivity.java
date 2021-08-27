@@ -49,7 +49,7 @@ import java.lang.reflect.Modifier;
  **/
 public abstract class AnnotationActivity extends AppCompatActivity implements View.OnClickListener {
 
-    protected final static int per_requestCode = 981028;
+    protected final static int per_requestCode = 1028;
     //点击事件集合
     protected final SparseArray<Method> methodSparseArray = new SparseArray<>();
 

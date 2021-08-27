@@ -22,7 +22,7 @@ import com.origami.window.ShowUtil;
 import java.io.File;
 
 /**
- * {@link OriImageActivity#startThisAct(Activity, Object)}
+ * {@link OriImageActivity#startThisAct(Activity, Object, boolean)}
  */
 public class OriImageActivity extends AnnotationActivity {
 
@@ -31,14 +31,15 @@ public class OriImageActivity extends AnnotationActivity {
     /**
      * 启动
      * @param activity
-     * @param bitmap 路径 或者 bitmap
+     * @param bitmapOrPath 路径 或者 bitmap
      */
-    public static void startThisAct(Activity activity, final Object bitmap){
+    public static void startThisAct(Activity activity, final Object bitmapOrPath, boolean canSave){
         Intent intent = new Intent(activity, OriImageActivity.class);
+        intent.putExtra("saveFlag", canSave);
         OriTransfer.registerTransfer("ori_getBitmap", new OriTransfer.Transfer<Object>(OriTransfer.Simple) {
             @Override
             public Object getT() {
-                return bitmap;
+                return bitmapOrPath;
             }
         });
         activity.startActivity(intent);
@@ -50,7 +51,7 @@ public class OriImageActivity extends AnnotationActivity {
      * @param view      目标view ：一般为点击的imageView
      * @param bitmap    路径 或者 bitmap
      */
-    public static void startThisAct(Activity activity, ImageView view, boolean canSave, final Object bitmap){
+    public static void startThisAct(Activity activity, final Object bitmap, boolean canSave, ImageView view){
         Intent intent = new Intent(activity, OriImageActivity.class);
         OriTransfer.registerTransfer("ori_getBitmap", new OriTransfer.Transfer<Object>(OriTransfer.Simple) {
             @Override
@@ -92,10 +93,6 @@ public class OriImageActivity extends AnnotationActivity {
                     ShowUtil.showSelect(OriImageActivity.this, new String[]{"保存"}, new ShowUtil.OnSelectListener() {
                         @Override
                         public void onSelect(String txt, int index) {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                                enterPictureInPictureMode();
-                                return;
-                            }
                             int labelRes = getApplication().getApplicationInfo().labelRes;
                             String path;
                             if (labelRes == 0) {

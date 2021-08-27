@@ -4,7 +4,11 @@ package com.origami.origami.base;
 import android.app.Activity;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleEventObserver;
+import androidx.lifecycle.LifecycleOwner;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -71,6 +75,7 @@ public class OriEventBus {
             weakReference = new WeakReference<>(activity);
             run_on_thread = run_thread;
         }
+
         public Event(Fragment fragment, int run_thread) {
             weakReference = new WeakReference<>(fragment);
             run_on_thread = run_thread;
@@ -93,7 +98,7 @@ public class OriEventBus {
                                     postEvent(args);
                                 }
                             });
-                        }else if(of != null && of.getActivity() != null){
+                        }else if(of.getActivity() != null){
                             of.getActivity().runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {

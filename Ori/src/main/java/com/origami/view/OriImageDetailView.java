@@ -30,7 +30,7 @@ import java.util.Random;
 public class OriImageDetailView extends View {
 
     private final int handler_taken = 1216;
-    private float tanH_sc = 70f;
+    private float tanH_sc = 50f;
 
     private final static String TAG = "ImageDetailView";
 
@@ -94,7 +94,7 @@ public class OriImageDetailView extends View {
                             simPoint = false;// 这里是为了防止单击和长按一起触发了
                             mLongClickListener.onLongClick(OriImageDetailView.this);
                         }
-                    },handler_taken, 1000);
+                    },handler_taken, 1200);
                 }
                 return true;
             case MotionEvent.ACTION_MOVE:
@@ -160,7 +160,7 @@ public class OriImageDetailView extends View {
                 break;
             case MotionEvent.ACTION_UP:
                 canMove = true;
-                if(simPoint) { performClick(); }
+                if(simPoint) { setSimPointFalse(); performClick(); }
                 pointSparseArray.clear();
                 return true;
             case MotionEvent.ACTION_POINTER_UP:
