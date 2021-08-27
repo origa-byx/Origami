@@ -265,7 +265,7 @@ public class OriImageSelect extends AnnotationActivity implements TouchHandler {
         _ori__recyclerView_select_place.setAdapter(selectPlaceAdapter);
         _ori__recyclerView_select_place.setTranslationY(-screenP.y);
         _ori__recyclerView_select_place.setVisibility(View.VISIBLE);
-        selectImageAdapter = new SelectImageAdapter(this, adapter_ImageData, builder.selectNum, builder.canPre);
+        selectImageAdapter = new SelectImageAdapter(this, adapter_ImageData, builder.selectNum, builder.canPre, builder.text_colors[0]);
         _ori__recyclerView.setLayoutManager(new GridLayoutManager(this, builder.rowShowNum));
         _ori__recyclerView.setAdapter(selectImageAdapter);
         _ori__recyclerView.addItemDecoration(new RecyclerView.ItemDecoration() {
@@ -294,6 +294,9 @@ public class OriImageSelect extends AnnotationActivity implements TouchHandler {
         _ori__complete.setTextColor(Ori.getSelectorColorStateList(builder.text_colors[0], builder.text_colors[1], true));
         _ori__recyclerView = findViewById(R.id._ori__recyclerView);
         _ori__recyclerView_select_place = findViewById(R.id._ori__recyclerView_select_place);
+        _ori__recyclerView_select_place.setBackground(
+                Ori.getGradientDrawable(new int[]{Color.WHITE,Color.parseColor("#525252")})
+        );
         _ori__cancel.setOnClickListener(this);
         _ori__select_place.setOnClickListener(this);
         _ori__complete.setOnClickListener(this);

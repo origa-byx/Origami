@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -32,23 +33,26 @@ public class SelectImageAdapter extends RecyclerView.Adapter<SelectImageAdapter.
 
     final OriImageSelect context;
     final List<String> dates;
+    final int itemBackColor;
     //最大选择数
     final int maxSelect;
     //是否可以预览
     final boolean canPre;
     final List<String> selectPaths = new ArrayList<>();
 
-    public SelectImageAdapter(OriImageSelect context, List<String> dates, int selectNum, boolean canPre) {
+    public SelectImageAdapter(OriImageSelect context, List<String> dates, int selectNum, boolean canPre,@ColorInt int itemBackColor) {
         this.context = context;
         this.dates = dates;
         this.maxSelect = Math.max(1, selectNum);
         this.canPre = canPre;
+        this.itemBackColor = itemBackColor;
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout._adapter_ori_select_image, parent, false);
+        view.setBackgroundColor(itemBackColor);
         ViewHolder viewHolder = new ViewHolder(view);
         if(!canPre && maxSelect <= 1){
             viewHolder.textView.setVisibility(View.GONE);

@@ -43,7 +43,7 @@ public class LaunchActivity extends AnnotationActivity {
             public void next() {
                 OriImageSelect.builder()
                         .setSelectNum(5)
-                        .setRowShowNum(1)
+                        .setRowShowNum(3)
                         .setRequestCode(123)
                         .setCanPre(false)
                         .build(LaunchActivity.this);
