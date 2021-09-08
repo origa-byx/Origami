@@ -4,14 +4,16 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
+
+import com.origami.view.inter.OriViewGroup;
+import com.origami.view.inter.TouchHandler;
 
 /**
  * @by: origami
  * @date: {2021-08-27}
  * @info:
  **/
-public class OriLinearLayout extends LinearLayout {
+public class OriLinearLayout extends LinearLayout implements OriViewGroup {
 
     TouchHandler dispatchTouchHandler,onInterceptTouchHandler,onTouchHandler;
 
@@ -54,14 +56,17 @@ public class OriLinearLayout extends LinearLayout {
         return super.onTouchEvent(event);
     }
 
+    @Override
     public void setDispatchTouchHandler(TouchHandler dispatchTouchHandler) {
         this.dispatchTouchHandler = dispatchTouchHandler;
     }
 
+    @Override
     public void setOnInterceptTouchHandler(TouchHandler onInterceptTouchHandler) {
         this.onInterceptTouchHandler = onInterceptTouchHandler;
     }
 
+    @Override
     public void setOnTouchHandler(TouchHandler onTouchHandler) {
         this.onTouchHandler = onTouchHandler;
     }

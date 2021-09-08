@@ -38,15 +38,19 @@ public class LaunchActivity extends AnnotationActivity {
 
     @BClick(R.id.cl)
     public void onClick(){
-        checkPermissionAndThen(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, new RequestPermissionNext() {
+        checkPermissionAndThen(new String[]{
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE}, new RequestPermissionNext() {
             @Override
             public void next() {
-                OriImageSelect.builder()
-                        .setSelectNum(5)
-                        .setRowShowNum(3)
-                        .setRequestCode(123)
-                        .setCanPre(false)
-                        .build(LaunchActivity.this);
+                Intent intent = new Intent(LaunchActivity.this, TestActivity.class);
+                startActivity(intent);
+//                OriImageSelect.builder()
+//                        .setSelectNum(5)
+//                        .setRowShowNum(3)
+//                        .setRequestCode(123)
+//                        .setCanPre(true)
+//                        .build(LaunchActivity.this);
             }
 
             @Override
@@ -97,7 +101,7 @@ public class LaunchActivity extends AnnotationActivity {
                     getWindow().getDecorView().postDelayed(new Runnable() {
                         @Override
                         public void run() {
-                            OriImageActivity.startThisAct(LaunchActivity.this, bitmap, true);
+                            OriImageActivity.startThisAct(LaunchActivity.this, bitmap, false);
                         }
                     },1000);
                 }

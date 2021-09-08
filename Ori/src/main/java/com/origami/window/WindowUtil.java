@@ -4,19 +4,21 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.PixelFormat;
-import android.graphics.Point;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
+
+import androidx.annotation.LayoutRes;
 
 import com.origami.origami.R;
 import com.origami.utils.Dp2px;
-import com.origami.utils.SoftInputUtil;
 import com.origami.utils.StatusUtils;
 
 import java.lang.ref.WeakReference;
@@ -25,11 +27,12 @@ import java.lang.ref.WeakReference;
  * @by: origami
  * @date: {2021-05-24}
  * @info:
+ * @deprecated 布局多镶嵌了一层，性能，资源较 {@link WindowUtil2} 而言开销较大
  **/
 public class WindowUtil {
 
     private final WeakReference<Activity> mActivity;
-    private RelativeLayout rootLayout;
+    private final RelativeLayout rootLayout;
     private View bindView;
 
     private final int navH;
@@ -72,8 +75,15 @@ public class WindowUtil {
         return new WindowUtil(activity, window_layoutParams_status);
     }
 
-
-    public WindowUtil bindView(int res, int width, int height, int... rule){
+    /**
+     * 绑定UI
+     * @param res    布局资源
+     * @param width  布局宽 例如 {@link android.widget.RelativeLayout.LayoutParams#MATCH_PARENT}
+     * @param height 布局高
+     * @param rule   布局定位 例如 {@link RelativeLayout#CENTER_IN_PARENT}
+     * @return
+     */
+    public WindowUtil bindView(@LayoutRes int res, int width, int height, int... rule){
         Activity activity = mActivity.get();
         params = new RelativeLayout.LayoutParams(width, height);
         if(rule != null && rule.length > 0) {
@@ -84,6 +94,10 @@ public class WindowUtil {
         return this;
     }
 
+    /**
+     * 看 {@link #bindView(int, int, int, int...)}
+     * @return
+     */
     public WindowUtil bindView(View view, int width, int height, int... rule){
         params = new RelativeLayout.LayoutParams(width, height);
         if(rule != null && rule.length > 0) {
@@ -93,6 +107,11 @@ public class WindowUtil {
         return this;
     }
 
+    /**
+     * 默认配置绑定布局
+     * @param res
+     * @return
+     */
     public WindowUtil bindDefCenterView(int res){
         Activity activity = mActivity.get();
         if(activity == null){ return this; }
@@ -102,6 +121,11 @@ public class WindowUtil {
         return this;
     }
 
+    /**
+     * 默认配置绑定view
+     * @param view
+     * @return
+     */
     public WindowUtil bindDefCenterView(View view){
         params = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
         params.addRule(RelativeLayout.CENTER_IN_PARENT);
@@ -109,6 +133,12 @@ public class WindowUtil {
         return this;
     }
 
+    /**
+     * 为布局内元素绑定事件
+     * @param listener
+     * @param resId
+     * @return
+     */
     public WindowUtil setOnclickListener(View.OnClickListener listener, int... resId){
         if(bindView == null){ throw new RuntimeException("you must be bind the view at first"); }
         if(resId == null || resId.length == 0){ return this; }
@@ -118,11 +148,20 @@ public class WindowUtil {
         return this;
     }
 
+    /**
+     * 获取View
+     * @param resId
+     * @return
+     */
     public View getViewById(int resId){
         if(bindView == null){ throw new RuntimeException("you must be bind the view at first"); }
         return bindView.findViewById(resId);
     }
 
+    /**
+     * 设置可以点击外部取消
+     * @return
+     */
     public WindowUtil setCanCancel(){
         bindView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -141,7 +180,7 @@ public class WindowUtil {
         return this;
     }
 
-    public void showByAnimator(){
+    public void showWithAnimator(){
         if(showFlag){ return; }
         Activity activity = mActivity.get();
         if(activity == null){ return; }
@@ -202,4 +241,71 @@ public class WindowUtil {
         return showFlag;
     }
 
+    //spd  static
+    public interface OnSelectListener{
+        /**
+         * 选择事件
+         * @param txt    选择的文本
+         * @param index  选择的文本的数组下标
+         */
+        void onSelect(String txt, int index);
+    }
+
+    /**
+     * 显示选项弹出框
+     * @param activity
+     * @param texts   可选列表
+     * @param selectListener  可选列表的点击事件
+     * @param showCancelView  是否含有取消选项
+     */
+    public static void showSelect(Activity activity, String[] texts, OnSelectListener selectListener, boolean showCancelView){
+        if(activity == null || selectListener == null){ return; }
+        View selectView = LayoutInflater.from(activity)
+                .inflate(
+                        R.layout._base_show_select,
+                        activity.getWindow().getDecorView().findViewById(android.R.id.content),
+                        false);
+        LinearLayout showLayout = selectView.findViewById(R.id.select_list);
+        WindowUtil windowUtil = WindowUtil.build(activity).bindView(selectView,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                RelativeLayout.ALIGN_PARENT_BOTTOM,
+                RelativeLayout.CENTER_HORIZONTAL).setCanCancel();
+        View.OnClickListener listener = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(v instanceof  TextView){
+                    int index =(int) v.getTag();
+                    windowUtil.dismiss();
+                    selectListener.onSelect(texts[index], index);
+                }
+            }
+        };
+        for (int i = 0; i < texts.length; i++) {
+            TextView textView = new TextView(activity);
+            textView.setTag(i);
+            textView.setTextSize(16);
+            textView.setBackground(activity.getDrawable(R.drawable._select_white_gray));
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Dp2px.dp2px(45));
+            layoutParams.gravity = Gravity.CENTER;
+            textView.setTextColor(Color.BLACK);
+            textView.setGravity(Gravity.CENTER);
+            textView.setText(texts[i]);
+            textView.setOnClickListener(listener);
+            showLayout.addView(textView, layoutParams);
+        }
+        TextView cancel_view = selectView.findViewById(R.id.select_cancel);
+        if(showCancelView){
+            cancel_view.setVisibility(View.VISIBLE);
+            cancel_view.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    windowUtil.dismiss();
+                }
+            });
+        }else {
+            cancel_view.setVisibility(View.GONE);
+        }
+        windowUtil.showWithAnimator();
+    }
 }

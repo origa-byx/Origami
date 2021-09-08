@@ -10,7 +10,8 @@
     <com.origami.view.YuunaTextView
         android:id="@+id/uii"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="250dp"
+        android:background="@color/_ori_red"
         app:yuuna_text="这是测试文字测试"
         app:yuuna_text_size="12sp"
         app:yuuna_radius="200dp" />

@@ -26,7 +26,7 @@ import java.util.List;
  * @date: {2021-05-19}
  * @info:
  **/
-public class OriTabBarView extends RelativeLayout {
+public class OriTabBarView extends OriRelativeLayout {
     private final Context mContext;
     private View rootView;
     private HorizontalScrollView mScrollView;

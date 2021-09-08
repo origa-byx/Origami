@@ -20,14 +20,17 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Origami">
         <activity android:name=".LaunchActivity"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait"
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
         <activity android:name=".TestActivity"
-            android:screenOrientation="portrait"/>
+            android:screenOrientation="portrait" android:launchMode="singleTop" />
+        <activity android:name=".Test2Act"
+            android:screenOrientation="portrait" android:launchMode="singleInstance"/>
     </application>
 
 </manifest>

@@ -19,9 +19,11 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.text.Editable;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
+import android.widget.EditText;
 
 import androidx.annotation.AttrRes;
 import androidx.annotation.ColorRes;
@@ -367,6 +369,20 @@ public class Ori {
             byte[] bytes = Base64.decode(base64Data, Base64.DEFAULT);
             return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
         } catch (Exception e) { }
+        return null;
+    }
+
+
+    /**
+     * 获取输入控件的值
+     * @param editText
+     * @return null ： 无值 反之 String
+     */
+    public static String getEditTextContent(EditText editText){
+        Editable editable = editText.getText();
+        if(editable != null && !TextUtils.isEmpty(editable.toString())){
+            return editable.toString();
+        }
         return null;
     }
 

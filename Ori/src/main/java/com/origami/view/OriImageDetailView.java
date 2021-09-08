@@ -1,5 +1,6 @@
 package com.origami.view;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -15,6 +16,8 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.IntRange;
+
+import com.origami.utils.UiThreadUtil;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -69,6 +72,11 @@ public class OriImageDetailView extends View {
         super(context, attrs, defStyleAttr);
     }
 
+    /**
+     * @param event
+     * @return
+     */
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         int actionMasked = event.getActionMasked();
@@ -92,7 +100,9 @@ public class OriImageDetailView extends View {
                         if (simPoint) {
                             canMove = false;
                             simPoint = false;// 这里是为了防止单击和长按一起触发了
-                            mLongClickListener.onLongClick(OriImageDetailView.this);
+//                            UiThreadUtil.getInstance().runOnUiThread(()->{
+                                mLongClickListener.onLongClick(OriImageDetailView.this);
+//                            });
                         }
                     },handler_taken, 1200);
                 }

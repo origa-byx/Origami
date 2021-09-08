@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -57,8 +58,15 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
 
     private ValueAnimator sMsgAnimator;
     private View sToastView;
-//    private int sToastView_H = 0;
-    OriEventBus.Event showToastEvent;
+    private final OriEventBus.Event showToastEvent = new OriEventBus.Event(this, OriEventBus.RunThread.MAIN_UI) {
+        @Override
+        public void postEvent(Object... args) {
+            if (args.length > 0) {
+                if (args[0] instanceof ToastMsg) { showToastMsg((ToastMsg) args[0]); }
+                else if (args[0] instanceof String) { showToastMsg(new ToastMsg((String) args[0])); }
+            }
+        }
+    };
 
     private RequestPermissionNext next;
 
@@ -68,7 +76,6 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
     protected void onCreate(@Nullable Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         Log.e("ORI",String.format("init -> %s", this.getClass().getSimpleName()));
-        Ori.v(String.format("init -> %s", this.getClass().getSimpleName()));
         BContentView contentView = getClass().getAnnotation(BContentView.class);
         if(contentView != null){
             setContentView(contentView.value());
@@ -103,16 +110,35 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
             if(bindClickListener != null){
                 int[] value = bindClickListener.value();
                 for (int i : value) {
-                    methodSparseArray.put(i,method);
+                    methodSparseArray.put(i, method);
                     findViewById(i).setOnClickListener(this);
                 }
             }
         }
+        AnnotationActivityManager.addActivity(this);
+        OriEventBus.registerEvent(EventConfig.SHOW_TOAST, showToastEvent);
         setStatusBar();
         init(savedInstanceState);
-        AnnotationActivityManager.addActivity(this);
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        Log.e("ORI",String.format("onNewIntent -> %s", this.getClass().getSimpleName()));
+        setIntent(intent);
+        initNewIntent(intent);
+    }
+
+    /**
+     * 特殊情况下 singleTop 与 singleTask 模式需要重新处理数据用
+     */
+    protected void initNewIntent(Intent intent){ }
+
+    /**
+     * 动态权限申请
+     * @param permissions
+     * @param permissionNext
+     */
     public void checkPermissionAndThen(String[] permissions, RequestPermissionNext permissionNext){
         if(!checkPermissionsAllGranted(permissions)){
             this.next = permissionNext;
@@ -179,20 +205,6 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
     @Override
     protected void onResume() {
         super.onResume();
-        if(showToastEvent == null) {
-            showToastEvent = new OriEventBus.Event(this, OriEventBus.RunThread.MAIN_UI) {
-                @Override
-                public void postEvent(Object... args) {
-                    if (args.length > 0) {
-                        if (args[0] instanceof ToastMsg) {
-                            showToastMsg((ToastMsg) args[0]);
-                        } else if (args[0] instanceof String) {
-                            showToastMsg(new ToastMsg((String) args[0]));
-                        }
-                    }
-                }
-            };
-        }
         OriEventBus.registerEvent(EventConfig.SHOW_TOAST, showToastEvent);
     }
 
@@ -209,7 +221,7 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
     }
 
     public void showToastMsg(ToastMsg msg){
-        if(TextUtils.isEmpty(msg.msg)){return;}
+        if(TextUtils.isEmpty(msg.msg)){ return; }
         if(sToastView == null){
             ViewGroup contView = getWindow().getDecorView().findViewById(android.R.id.content);
             sToastView = LayoutInflater.from(this)

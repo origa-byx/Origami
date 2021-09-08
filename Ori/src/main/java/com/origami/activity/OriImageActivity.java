@@ -1,23 +1,24 @@
 package com.origami.activity;
 
-import androidx.annotation.Nullable;
-import androidx.core.app.ActivityOptionsCompat;
-
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+
+import androidx.annotation.Nullable;
+import androidx.core.app.ActivityOptionsCompat;
 
 import com.origami.origami.R;
 import com.origami.origami.base.AnnotationActivity;
 import com.origami.origami.base.OriTransfer;
 import com.origami.origami.base.base_utils.ToastMsg;
 import com.origami.view.OriImageDetailView;
-import com.origami.window.ShowUtil;
+import com.origami.window.WindowUtil;
+import com.origami.window.WindowUtil2;
 
 import java.io.File;
 
@@ -71,12 +72,6 @@ public class OriImageActivity extends AnnotationActivity {
     }
 
     @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        setIntent(intent);
-    }
-
-    @Override
     public void init(@Nullable Bundle savedInstanceState) {
         imageView = findViewById(R.id.ori_image);
         boolean save = getIntent().getBooleanExtra("saveFlag", true);
@@ -86,33 +81,27 @@ public class OriImageActivity extends AnnotationActivity {
         }else {
             imageView.setImageBitmap(BitmapFactory.decodeFile((String) bitmap));
         }
-        if(save) {
-            imageView.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
-                    ShowUtil.showSelect(OriImageActivity.this, new String[]{"保存"}, new ShowUtil.OnSelectListener() {
-                        @Override
-                        public void onSelect(String txt, int index) {
-                            int labelRes = getApplication().getApplicationInfo().labelRes;
-                            String path;
-                            if (labelRes == 0) {
-                                path = "ori" + File.separator + "image";
-                            } else {
-                                path = getResources().getString(labelRes) + File.separator + "image";
-                            }
-                            String savePath = imageView.saveBitmap(path, true);
-                            if (savePath != null) {
-                                ToastMsg.show_msg("保存成功：" + savePath, 2000);
-                            } else {
-                                ToastMsg toastMsg = new ToastMsg("保存失败");
-                                toastMsg.showIcon = false;
-                                toastMsg.showTime = 2500;
-                                OriImageActivity.this.showToastMsg(toastMsg);
-                            }
-                        }
-                    }, true);
-                    return false;
-                }
+        if(!save) {
+            imageView.setOnLongClickListener(v -> {
+                WindowUtil2.showSelect(OriImageActivity.this, new String[]{"保存"}, (txt, index) -> {
+                    int labelRes = getApplication().getApplicationInfo().labelRes;
+                    String path;
+                    if (labelRes == 0) {
+                        path = "ori" + File.separator + "image";
+                    } else {
+                        path = getResources().getString(labelRes) + File.separator + "image";
+                    }
+                    String savePath = imageView.saveBitmap(path, true);
+                    if (savePath != null) {
+                        ToastMsg.show_msg("保存成功：" + savePath, 2000);
+                    } else {
+                        ToastMsg toastMsg = new ToastMsg("保存失败");
+                        toastMsg.showIcon = false;
+                        toastMsg.showTime = 2500;
+                        OriImageActivity.this.showToastMsg(toastMsg);
+                    }
+                }, true);
+                return true;
             });
         }
 

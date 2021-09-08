@@ -4,20 +4,16 @@ import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
-import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
-import android.os.Build;
 import android.os.Bundle;
-import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.animation.Animation;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.ColorRes;
@@ -44,8 +40,7 @@ import com.origami.utils.ProviderImageUtils;
 import com.origami.utils.StatusUtils;
 import com.origami.view.OriRecyclerView;
 import com.origami.view.OriRelativeLayout;
-import com.origami.view.TouchHandler;
-import com.origami.window.WindowUtil;
+import com.origami.view.inter.TouchHandler;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -409,4 +404,5 @@ public class OriImageSelect extends AnnotationActivity implements TouchHandler {
     protected int getLayout() {
         return R.layout.activity_ori_select_image;
     }
+
 }

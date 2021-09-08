@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.widget.ImageView;
 
 import androidx.annotation.Nullable;
@@ -21,6 +22,9 @@ import com.origami.origami.base.AnnotationActivity;
 import com.origami.origami.base.annotation.BClick;
 import com.origami.origami.base.annotation.BContentView;
 import com.origami.origami.base.annotation.BView;
+import com.origami.utils.Ori;
+import com.origami.window.NotificationUtil;
+import com.origami.window.WindowUtil2;
 
 
 @SuppressLint("NonConstantResourceId")
@@ -56,14 +60,33 @@ public class TestActivity extends AnnotationActivity {
         }
     }
 
+
     @SuppressWarnings("unused")
-    @BClick(R.id.jni_test)
+    @BClick(R.id.uii)
     public void onClick_jni(){
-        OriImageSelect.builder()
-                .setCanPre(true)
-                .setSelectNum(2)
-                .setRowShowNum(3)
-                .setRequestCode(123).build(this);
+        WindowUtil2.showMakeSure(this, "确认要启动这个活动吗？？？",
+                new String[]{"确认", "取消"}, new WindowUtil2.OnSelectListener() {
+            @Override
+            public void onSelect(String txt, int index) {
+                if(index == 0){
+                    Intent intent = new Intent(TestActivity.this, Test2Act.class);
+                    startActivity(intent);
+                }else {
+                    NotificationUtil.builder(TestActivity.this)
+                            .setIntent(Test2Act.class)
+                            .setId_Name("com.ori.notify", "活动启动")
+                            .setIconRes(R.mipmap.ic_launcher)
+                            .setTitle("启动2Act")
+                            .setContentText("点击此处来启动Test2Act\nclick-click\nclick")
+                            .build().show();
+                }
+            }
+        }, 0.3f);
+//        OriImageSelect.builder()
+//                .setCanPre(true)
+//                .setSelectNum(2)
+//                .setRowShowNum(3)
+//                .setRequestCode(123).build(this);
     }
 
 }

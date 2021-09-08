@@ -36,6 +36,10 @@ public class AnnotationActivityManager {
         return null;
     }
 
+    public static List<AnnotationActivity> getActivityList() {
+        return mActivityList;
+    }
+
     public static void killAll(boolean killProcess){
         for (AnnotationActivity activity : mActivityList) {
             if (activity != null && !activity.isFinishing()) {

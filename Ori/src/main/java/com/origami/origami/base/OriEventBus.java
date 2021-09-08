@@ -4,17 +4,13 @@ package com.origami.origami.base;
 import android.app.Activity;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Lifecycle;
-import androidx.lifecycle.LifecycleEventObserver;
-import androidx.lifecycle.LifecycleOwner;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @by: origami
@@ -25,12 +21,12 @@ public class OriEventBus {
 
     private final static String TAG = "OriEventBus";
 
-    private final static Map<String, List<Event>> EVENT_MAP = new HashMap<>();
+    private final static Map<String, Set<Event>> EVENT_MAP = new HashMap<>();
 
     public static void registerEvent(String tag, Event event){
         if(tag == null || event == null){ return; }
-        List<Event> events = EVENT_MAP.get(tag);
-        if(events == null){ events = new ArrayList<>(); }
+        Set<Event> events = EVENT_MAP.get(tag);
+        if(events == null){ events = new HashSet<>(); }
         if(!events.contains(event)) {
             event.tag = tag;
             events.add(event);
@@ -40,7 +36,7 @@ public class OriEventBus {
 
     public static void triggerEvent(String tag, Object... args){
         if(tag == null){ return; }
-        List<Event> events = EVENT_MAP.get(tag);
+        Set<Event> events = EVENT_MAP.get(tag);
         if(events != null){
             for (Event event : events) {
                 event.triggerEvent(args);

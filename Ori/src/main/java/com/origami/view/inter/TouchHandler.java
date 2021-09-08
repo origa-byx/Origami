@@ -1,4 +1,4 @@
-package com.origami.view;
+package com.origami.view.inter;
 
 import android.view.MotionEvent;
 

@@ -3,16 +3,18 @@ package com.origami.view;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
-import android.widget.FrameLayout;
 
 import androidx.constraintlayout.widget.ConstraintLayout;
+
+import com.origami.view.inter.OriViewGroup;
+import com.origami.view.inter.TouchHandler;
 
 /**
  * @by: origami
  * @date: {2021-08-27}
  * @info:
  **/
-public class OriConstraintLayout extends ConstraintLayout {
+public class OriConstraintLayout extends ConstraintLayout implements OriViewGroup {
 
     TouchHandler dispatchTouchHandler,onInterceptTouchHandler,onTouchHandler;
 
@@ -55,14 +57,17 @@ public class OriConstraintLayout extends ConstraintLayout {
         return super.onTouchEvent(event);
     }
 
+    @Override
     public void setDispatchTouchHandler(TouchHandler dispatchTouchHandler) {
         this.dispatchTouchHandler = dispatchTouchHandler;
     }
 
+    @Override
     public void setOnInterceptTouchHandler(TouchHandler onInterceptTouchHandler) {
         this.onInterceptTouchHandler = onInterceptTouchHandler;
     }
 
+    @Override
     public void setOnTouchHandler(TouchHandler onTouchHandler) {
         this.onTouchHandler = onTouchHandler;
     }
