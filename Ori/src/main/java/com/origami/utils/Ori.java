@@ -252,14 +252,26 @@ public class Ori {
      * @return null ：保存失败
      */
     public static String saveBitmapWithAppNamePath(Bitmap mBitmap, Context context , boolean isRandomFile) {
+        return saveBitmapWithAppNamePath(mBitmap, context, isRandomFile, Bitmap.CompressFormat.JPEG);
+    }
+
+    public static String saveBitmapWithAppNamePath(Bitmap mBitmap, Context context , boolean isRandomFile, Bitmap.CompressFormat format) {
         File filePic;
         StringBuilder savePath = new StringBuilder(getSaveFilePath(context, Environment.DIRECTORY_PICTURES));
+        String type;
+        if(format == Bitmap.CompressFormat.JPEG){
+            type = ".jpg";
+        }else if(format == Bitmap.CompressFormat.PNG){
+            type = ".png";
+        }else{
+            type = ".webp";
+        }
         if(isRandomFile){
             savePath.append(getRandomFileString(mBitmap, 8))
-                    .append(".jpg");
+                    .append(type);
         }else {
             savePath.append(getRandomString(8))
-                    .append(".jpg");
+                    .append(type);
         }
         String save_path = savePath.toString();
         try {
@@ -271,7 +283,7 @@ public class Ori {
                 filePic.createNewFile();
             }
             FileOutputStream fos = new FileOutputStream(filePic);
-            mBitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+            mBitmap.compress(format, 100, fos);
             fos.flush();
             fos.close();
         } catch (IOException e) {

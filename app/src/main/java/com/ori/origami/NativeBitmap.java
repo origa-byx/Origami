@@ -38,7 +38,7 @@ public class NativeBitmap {
             if(px[i] == a){ px[i] = Color.TRANSPARENT; }
         }
         bitmap.setPixels(px, 0, bitmap.getWidth(), 0 ,0 , bitmap.getWidth(), bitmap.getHeight());
-        String path1 = Ori.saveBitmapWithAppNamePath(bitmap, context, true);
+        String path1 = Ori.saveBitmapWithAppNamePath(bitmap, context, true, Bitmap.CompressFormat.PNG);
         Log.e("ORI","PSPS:" + path1);
     }
 

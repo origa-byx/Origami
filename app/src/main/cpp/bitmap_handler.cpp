@@ -33,12 +33,20 @@ extern "C" {
 //        int re = pthread_create(&thread_id_bitmap, NULL, gauss_thread, NULL);
 //        if(re){ return -3; }
 //        pthread_join(thread_id_bitmap, NULL); //同步 -> 参考 wait notify
-//        gaussianBlur((unsigned char*)px, 0, 0, info.width, info.height, comp, radius);
+
+//        gaussianBlur((unsigned char*) px, 0, 0, info.width, info.height, comp, radius);
         AndroidBitmap_unlockPixels(env, bitmap);
         return 0;
     }
 }
 
+/**
+ * 二值化
+ * @param px
+ * @param w
+ * @param h
+ * @param comp
+ */
 void px_handler(unsigned char* px, unsigned int w, unsigned int h, int comp){
     for(int i = 0; i < w * h; i++){
         double val = px[i * comp + 0] * 0.3 + px[i * comp + 1] * 0.59 + px[i * comp + 2] * 0.11;
@@ -50,6 +58,16 @@ void px_handler(unsigned char* px, unsigned int w, unsigned int h, int comp){
     }
 }
 
+/**
+ * 高斯模糊
+ * @param img
+ * @param x
+ * @param y
+ * @param w
+ * @param h
+ * @param comp
+ * @param radius
+ */
 void gaussianBlur(unsigned char * img, unsigned  int x, unsigned int y, unsigned int w, unsigned int h, unsigned int comp, unsigned int radius)
 {
     unsigned int i, j ;

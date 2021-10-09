@@ -76,7 +76,7 @@ public class LaunchActivity extends AnnotationActivity {
         if(requestCode == 123 && resultCode == Activity.RESULT_OK && data != null){
             String[] paths = data.getStringArrayExtra(OriImageSelect.RESULT_KEY);
             if(paths == null || paths.length != 1){ return; }
-            NativeBitmap.ps(paths[0], this);
+            doB(paths[0]);
         }
     }
 
@@ -106,12 +106,7 @@ public class LaunchActivity extends AnnotationActivity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                getWindow().getDecorView().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        ToastMsg.show_msg("等待处理...", false, 7000);
-                    }
-                },500);
+                ToastMsg.show_msg("等待处理...", false, 7000);
                 int i = NativeBitmap.testBitmap(bitmap, radius);
                 ToastMsg.show_msg("处理完成->" + i, true, 1000);
                 getWindow().getDecorView().postDelayed(new Runnable() {
