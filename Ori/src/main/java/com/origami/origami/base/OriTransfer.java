@@ -21,20 +21,17 @@ public class OriTransfer {
     public final static int Simple = 0;
     public final static int Repeat = 1;
 
+    private final static Map<String, Transfer<?>> transferMap = new LinkedHashMap<>();
 
-    private final static Map<String, Transfer> transferMap = new LinkedHashMap<>();
-
-    public static void registerTransfer(String tag, Transfer transfer){
+    public static void registerTransfer(String tag, Transfer<?> transfer){
         transferMap.put(tag, transfer);
     }
 
     public static  <V> V getTransferValue(String tag){
-        Transfer transfer = transferMap.get(tag);
+        Transfer<V> transfer = (Transfer<V>) transferMap.get(tag);
         if(transfer == null){ Log.e(TAG,"you must register at first"); return null; }
-        if(transfer.type == Simple){
-            transferMap.remove(tag);
-        }
-        return (V) transfer.getT();
+        if(transfer.type == Simple){ transferMap.remove(tag); }
+        return transfer.getT();
     }
 
     public static void removeTransfer(String tag){

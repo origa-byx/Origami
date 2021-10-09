@@ -28,7 +28,9 @@ import com.origami.utils.UiThreadUtil;
  * @by: origami
  * @date: {2021-08-30}
  * @info:
- * @deprecated 受限于权限和窗口绑定机制，此方式不能实现跨activity的 view组件 来保持view的显示
+ * @deprecated  仅测试 独立于Activity的全局悬浮框   需指引用户手动开启权限
+ * 注意 {@link Builder#setCanTouch(boolean)} 的flags false 不然可能会完全屏蔽屏幕事件
+ * 外部最好不要多套一层了，不然事件会被先分发到他那里
  **/
 public class GlobalWindowUtil {
 
@@ -95,16 +97,24 @@ public class GlobalWindowUtil {
 
     }
 
+    /**
+     * @deprecated 测试用
+     * @param msg
+     */
     public void showToast(final ToastMsg msg){
         UiThreadUtil.getInstance().runOnUiThread(()->{
             showToastMsg(msg);
         });
     }
 
+    /**
+     * @deprecated 测试用
+     * @param msg
+     */
     private void showToastMsg(ToastMsg msg){
         if(TextUtils.isEmpty(msg.msg)){ return; }
-        AnnotationActivity annotationActivity = AnnotationActivityManager.getActivityList().get(0);
-        windowManager = (WindowManager) annotationActivity.getSystemService(Context.WINDOW_SERVICE);
+//        AnnotationActivity annotationActivity = AnnotationActivityManager.getActivityList().get(0);
+        windowManager = (WindowManager) App.appContext.getSystemService(Context.WINDOW_SERVICE);
         if(sToastView == null){
             ViewGroup contView = new FrameLayout(App.appContext);
             sToastView = LayoutInflater.from(App.appContext)
@@ -141,24 +151,16 @@ public class GlobalWindowUtil {
             sMsgAnimator.addListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationEnd(Animator animation) {
-                    sToastView.setVisibility(View.GONE);
+//                    sToastView.setVisibility(View.GONE);
                 }
 
                 @Override
                 public void onAnimationCancel(Animator animation) {
-                    sToastView.setVisibility(View.GONE);
+//                    sToastView.setVisibility(View.GONE);
                 }
             });
         }
-        if(sMsgAnimator.isRunning()){
-//            通过队列实现--> 特殊需求基本才会用到保证每条消息都被完整显示
-//            if(msg.showType == ToastMsg.DEF){//默认队列
-//
-//            }else {//抢占模式
-//
-//            }
-            sMsgAnimator.cancel();
-        }
+        if(sMsgAnimator.isRunning()){ sMsgAnimator.cancel(); }
         sMsgAnimator.setDuration(anTime + msg.showTime);
         sToastView.setVisibility(View.VISIBLE);
         sMsgAnimator.start();

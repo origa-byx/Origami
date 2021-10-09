@@ -2,12 +2,17 @@ package com.origami.view;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
+import android.view.animation.Interpolator;
+import android.widget.OverScroller;
 
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.origami.view.inter.OriViewGroup;
 import com.origami.view.inter.TouchHandler;
+
+import java.lang.reflect.Field;
 
 /**
  * @by: origami
@@ -16,7 +21,7 @@ import com.origami.view.inter.TouchHandler;
  **/
 public class OriRecyclerView extends RecyclerView implements OriViewGroup {
 
-    TouchHandler dispatchTouchHandler,onInterceptTouchHandler,onTouchHandler;
+    TouchHandler dispatchTouchHandler, onInterceptTouchHandler, onTouchHandler;
 
     public OriRecyclerView(Context context) {
         super(context);

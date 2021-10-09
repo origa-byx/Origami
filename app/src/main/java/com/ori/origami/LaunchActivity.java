@@ -22,10 +22,9 @@ import com.origami.origami.base.annotation.BContentView;
 import com.origami.origami.base.annotation.BView;
 import com.origami.origami.base.base_utils.ToastMsg;
 
-/**
- * 该页面主要用以 同意授权
- * created by cai
- **/
+import java.io.IOException;
+import java.io.InputStream;
+
 @SuppressLint("NonConstantResourceId")
 @BContentView(R.layout.activity_launch)
 public class LaunchActivity extends AnnotationActivity {
@@ -43,14 +42,19 @@ public class LaunchActivity extends AnnotationActivity {
                 Manifest.permission.WRITE_EXTERNAL_STORAGE}, new RequestPermissionNext() {
             @Override
             public void next() {
-                Intent intent = new Intent(LaunchActivity.this, TestActivity.class);
-                startActivity(intent);
-//                OriImageSelect.builder()
-//                        .setSelectNum(5)
-//                        .setRowShowNum(3)
-//                        .setRequestCode(123)
-//                        .setCanPre(true)
-//                        .build(LaunchActivity.this);
+//                try {
+//                    doB(getResources().getAssets().open("test.jpg"));
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//                Intent intent = new Intent(LaunchActivity.this, Test_recycler.class);
+//                startActivity(intent);
+                OriImageSelect.builder()
+                        .setSelectNum(5)
+                        .setRowShowNum(3)
+                        .setRequestCode(123)
+                        .setCanPre(true)
+                        .build(LaunchActivity.this);
             }
 
             @Override
@@ -72,40 +76,51 @@ public class LaunchActivity extends AnnotationActivity {
         if(requestCode == 123 && resultCode == Activity.RESULT_OK && data != null){
             String[] paths = data.getStringArrayExtra(OriImageSelect.RESULT_KEY);
             if(paths == null || paths.length != 1){ return; }
-            Bitmap bitmap = BitmapFactory.decodeFile(paths[0]);
-            Editable text = editText.getText();
-            int radius;
-            if(text != null && !TextUtils.isEmpty(text.toString())){
-                int val;
-                try {
-                    val = Integer.parseInt(text.toString());
-                }catch (NumberFormatException e){
-                    editText.setText(String.valueOf(50));
-                    val = 50;
-                }
-                radius = val;
-            }else {
-                radius = 50;
-            }
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    getWindow().getDecorView().postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            ToastMsg.show_msg("等待处理...", false, 7000);
-                        }
-                    },500);
-                    int i = NativeBitmap.testBitmap(bitmap, radius);
-                    ToastMsg.show_msg("处理完成->" + i, true, 1000);
-                    getWindow().getDecorView().postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            OriImageActivity.startThisAct(LaunchActivity.this, bitmap, false);
-                        }
-                    },1000);
-                }
-            }).start();
+            NativeBitmap.ps(paths[0], this);
         }
+    }
+
+    private void doB(InputStream stream){
+        doB(BitmapFactory.decodeStream(stream));
+    }
+
+    private void doB(String path){
+        doB(BitmapFactory.decodeFile(path));
+    }
+
+    private void doB(Bitmap bitmap){
+        Editable text = editText.getText();
+        int radius;
+        if(text != null && !TextUtils.isEmpty(text.toString())){
+            int val;
+            try {
+                val = Integer.parseInt(text.toString());
+            }catch (NumberFormatException e){
+                editText.setText(String.valueOf(50));
+                val = 50;
+            }
+            radius = val;
+        }else {
+            radius = 50;
+        }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                getWindow().getDecorView().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        ToastMsg.show_msg("等待处理...", false, 7000);
+                    }
+                },500);
+                int i = NativeBitmap.testBitmap(bitmap, radius);
+                ToastMsg.show_msg("处理完成->" + i, true, 1000);
+                getWindow().getDecorView().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        OriImageActivity.startThisAct(LaunchActivity.this, bitmap, false);
+                    }
+                },1000);
+            }
+        }).start();
     }
 }

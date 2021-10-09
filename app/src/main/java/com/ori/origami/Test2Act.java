@@ -7,10 +7,13 @@ import android.util.Log;
 import android.view.KeyEvent;
 
 import androidx.annotation.Nullable;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.origami.origami.base.AnnotationActivity;
 import com.origami.origami.base.annotation.BClick;
 import com.origami.origami.base.annotation.BContentView;
+import com.origami.origami.base.base_utils.ToastMsg;
+import com.origami.window.GlobalWindowUtil;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -44,6 +47,9 @@ public class Test2Act extends AnnotationActivity {
                 Log.e("ORI", "Test2Act: 我还活着-: " + ((System.currentTimeMillis() % 2) == 0?"=3=":"^v^"));
             }
         },1000,2000);
+        GlobalWindowUtil.builder()
+                .setCanTouch(false)
+                .build().showToast(new ToastMsg("开始了开始了"));
     }
 
     @Override

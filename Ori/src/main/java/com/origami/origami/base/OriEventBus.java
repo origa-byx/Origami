@@ -67,11 +67,19 @@ public class OriEventBus {
         private final int run_on_thread;
         private final WeakReference<Object> weakReference;
 
+        /**
+         * @param activity
+         * @param run_thread  {@link RunThread}
+         */
         public Event(Activity activity, int run_thread) {
             weakReference = new WeakReference<>(activity);
             run_on_thread = run_thread;
         }
 
+        /**
+         * @param fragment
+         * @param run_thread  {@link RunThread}
+         */
         public Event(Fragment fragment, int run_thread) {
             weakReference = new WeakReference<>(fragment);
             run_on_thread = run_thread;
@@ -88,33 +96,18 @@ public class OriEventBus {
                 switch (run_on_thread){
                     case RunThread.MAIN_UI:{
                         if(oa != null) {
-                            oa.runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    postEvent(args);
-                                }
-                            });
+                            oa.runOnUiThread(() -> postEvent(args));
                         }else if(of.getActivity() != null){
-                            of.getActivity().runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    postEvent(args);
-                                }
-                            });
+                            of.getActivity().runOnUiThread(() -> postEvent(args));
                         }else {
                             log_msg("other");
                         }
                     }break;
 
                     case RunThread.CURRENT:{ postEvent(args); }break;
-                    case RunThread.NEW_THREAD:{
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() { postEvent(args); }
-                        }).start();
-                    }break;
+                    case RunThread.NEW_THREAD:{ new Thread(() -> postEvent(args)).start(); }break;
                 }
-            }else { log_msg("get null"); }
+            }else { log_msg("->weakReference get null"); }
         }
 
        public abstract void postEvent(Object... args);

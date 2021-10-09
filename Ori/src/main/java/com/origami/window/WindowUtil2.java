@@ -3,9 +3,16 @@ package com.origami.window;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AppOpsManager;
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
-import android.util.Log;
+import android.graphics.Point;
+import android.net.Uri;
+import android.os.Binder;
+import android.os.Build;
+import android.provider.Settings;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -23,6 +30,8 @@ import com.origami.origami.R;
 import com.origami.utils.Dp2px;
 
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 /**
  * @by: origami
@@ -40,27 +49,50 @@ public class WindowUtil2 {
 
     private ValueAnimator showAnimator;
 
-    private WindowUtil2(Activity activity, int status){
+    private Runnable dismissListener;
+
+    private WindowUtil2(Activity activity, int window_layoutParams_flags, boolean system_window){
         window = activity.getWindowManager();
         paramsWindow.width = WindowManager.LayoutParams.MATCH_PARENT;
         paramsWindow.height = WindowManager.LayoutParams.WRAP_CONTENT;
         paramsWindow.format = PixelFormat.TRANSPARENT;
-        paramsWindow.flags = status |
+        paramsWindow.flags = window_layoutParams_flags |
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL |
                 WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH |
                 WindowManager.LayoutParams.FLAG_DIM_BEHIND;
-        paramsWindow.type = WindowManager.LayoutParams.LAST_APPLICATION_WINDOW;
+        if(system_window){
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                //26及以上必须使用TYPE_APPLICATION_OVERLAY   @deprecated TYPE_PHONE
+                paramsWindow.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
+            } else {
+                paramsWindow.type = WindowManager.LayoutParams.TYPE_PHONE;
+            }
+        }else {
+            paramsWindow.type = WindowManager.LayoutParams.LAST_APPLICATION_WINDOW;
+        }
         paramsWindow.gravity = Gravity.CENTER;
         paramsWindow.dimAmount = 0;
         mActivity = new WeakReference<>(activity);
     }
 
     public static WindowUtil2 build(Activity activity){
-        return new WindowUtil2(activity, 0);
+        return new WindowUtil2(activity, 0, false);
     }
 
     public static WindowUtil2 build(Activity activity, int window_layoutParams_flags){
-        return new WindowUtil2(activity, window_layoutParams_flags);
+        return new WindowUtil2(activity, window_layoutParams_flags, false);
+    }
+
+    /**
+     * 独立于Activity的全局悬浮框   需指引用户手动开启权限
+     * @param activity
+     * @return
+     */
+    public static WindowUtil2 build_systemWindow(Activity activity){
+        return new WindowUtil2(activity, 0, true);
+    }
+    public static WindowUtil2 build_systemWindow(Activity activity, int window_layoutParams_flags){
+        return new WindowUtil2(activity, window_layoutParams_flags, true);
     }
 
     /**
@@ -76,6 +108,20 @@ public class WindowUtil2 {
         paramsWindow.height = height;
         if(activity == null){ return this; }
         this.bindView = LayoutInflater.from(activity).inflate(res, null, false);
+        return this;
+    }
+
+    public WindowUtil2 setMarginH(int h){
+        if(paramsWindow.width == WindowManager.LayoutParams.MATCH_PARENT){
+            Point point = new Point();
+            window.getDefaultDisplay().getSize(point);
+            paramsWindow.width = point.x - h * 2;
+        }
+        return this;
+    }
+
+    public WindowUtil2 setGravity(int gravity){
+        paramsWindow.gravity = gravity;
         return this;
     }
 
@@ -153,6 +199,14 @@ public class WindowUtil2 {
         return this;
     }
 
+    public WindowManager.LayoutParams getParamsWindow() {
+        return paramsWindow;
+    }
+
+    public void updateWindow(){
+        window.updateViewLayout(bindView, paramsWindow);
+    }
+
     /**
      * 获取View
      * @param resId
@@ -218,7 +272,21 @@ public class WindowUtil2 {
         showFlag = true;
     }
 
+    public WindowUtil2 setDismissListener(Runnable dismissListener) {
+        this.dismissListener = dismissListener;
+        return this;
+    }
+
     public void dismiss(){
+        if(!showFlag){ return; }
+        if(showAnimator != null && showAnimator.isRunning()){ showAnimator.cancel(); }
+        if(dismissListener != null){ dismissListener.run(); }
+        bindView.clearFocus();
+        window.removeView(bindView);
+        showFlag = false;
+    }
+
+    public void dismissWithNotDoListener(){
         if(!showFlag){ return; }
         if(showAnimator != null && showAnimator.isRunning()){ showAnimator.cancel(); }
         bindView.clearFocus();
@@ -360,5 +428,64 @@ public class WindowUtil2 {
         windowUtil2.showWithAnimator();
     }
 
+
+    /***
+     * 检查悬浮窗开启权限
+     * @param context
+     * @return
+     */
+    public static boolean checkFloatWindowPermission(Context context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT)
+            return true;
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            try {
+                Class cls = Class.forName("android.content.Context");
+                Field declaredField = cls.getDeclaredField("APP_OPS_SERVICE");
+                declaredField.setAccessible(true);
+                Object obj = declaredField.get(cls);
+                if (!(obj instanceof String)) {
+                    return false;
+                }
+                String str2 = (String) obj;
+                obj = cls.getMethod("getSystemService", String.class).invoke(context, str2);
+                cls = Class.forName("android.app.AppOpsManager");
+                Field declaredField2 = cls.getDeclaredField("MODE_ALLOWED");
+                declaredField2.setAccessible(true);
+                Method checkOp = cls.getMethod("checkOp", Integer.TYPE, Integer.TYPE, String.class);
+                int result = (Integer) checkOp.invoke(obj, 24, Binder.getCallingUid(), context.getPackageName());
+                return result == declaredField2.getInt(cls);
+            } catch (Exception e) {
+                return false;
+            }
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                AppOpsManager appOpsMgr = (AppOpsManager) context.getSystemService(Context.APP_OPS_SERVICE);
+                if (appOpsMgr == null)
+                    return false;
+                int mode;
+                if(Build.VERSION.SDK_INT > Build.VERSION_CODES.R) {
+                    mode= appOpsMgr.unsafeCheckOpNoThrow("android:system_alert_window", android.os.Process.myUid(), context
+                            .getPackageName());
+                }else {
+                    mode= appOpsMgr.checkOpNoThrow("android:system_alert_window", android.os.Process.myUid(), context
+                            .getPackageName());
+                }
+                return Settings.canDrawOverlays(context) || mode == AppOpsManager.MODE_ALLOWED || mode == AppOpsManager.MODE_IGNORED;
+            } else {
+                return Settings.canDrawOverlays(context);
+            }
+        }
+    }
+
+    /**
+     * 悬浮窗开启权限
+     * @param context
+     * @param requestCode
+     */
+    public static void requestFloatPermission(Activity context, int requestCode){
+        Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
+        intent.setData(Uri.parse("package:" + context.getPackageName()));
+        context.startActivityForResult(intent, requestCode);
+    }
 
 }

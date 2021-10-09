@@ -3,16 +3,11 @@ package com.origami.utils;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.res.ColorStateList;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.LayerDrawable;
-import android.graphics.drawable.LevelListDrawable;
-import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.media.MediaScannerConnection;
 import android.os.Build;
@@ -26,9 +21,7 @@ import android.util.Log;
 import android.widget.EditText;
 
 import androidx.annotation.AttrRes;
-import androidx.annotation.ColorRes;
 import androidx.annotation.IntRange;
-import androidx.annotation.RequiresApi;
 
 import com.origami.log.OriLog;
 import com.origami.log.OriLogBean;
@@ -38,7 +31,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.DatagramSocket;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Calendar;
@@ -142,8 +134,10 @@ public class Ori {
      * @return
      */
     public static StateListDrawable getDefSelectorBackgroundButtonDrawable(Context context, int color_out, int color_in, boolean okIsHasBor){
-        Drawable drawable = context.getResources().getDrawable(R.drawable._ori_back_blue_per);
-        Drawable drawable_anti = context.getResources().getDrawable(R.drawable._ori_back_blue_nor);
+        Drawable drawable = context.getResources().getDrawable(R.drawable._ori_back_blue_per)
+                .mutate();
+        Drawable drawable_anti = context.getResources().getDrawable(R.drawable._ori_back_blue_nor)
+                .mutate();
         if(drawable instanceof LayerDrawable){
             Drawable drawable_son1 = ((LayerDrawable) drawable).getDrawable(0);
             Drawable drawable_son2 = ((LayerDrawable) drawable).getDrawable(1);
@@ -173,10 +167,6 @@ public class Ori {
      * @return
      */
     public static ColorStateList getSelectorColorStateList(int color_nor, int color_per, boolean okIsHasBor){
-        ColorDrawable drawable_nor = new ColorDrawable();
-        ColorDrawable drawable_per = new ColorDrawable();
-        drawable_nor.setColor(color_nor);
-        drawable_per.setColor(color_per);
         int[] colors = new int[2];
         if(okIsHasBor){
             colors[1] = color_nor; colors[0] = color_per;
@@ -192,7 +182,7 @@ public class Ori {
      * @return
      */
     public static String getRandomString(@IntRange(from = 6) int length){
-        String ran = "abcdefghijkmlnopqrstuvwxyz123456789";
+        String ran = "abcdefghijkmlnopqrstuvwxyz0123456789";
         Random random = new Random();
         StringBuilder builder = new StringBuilder();
         Calendar date = Calendar.getInstance();
@@ -212,7 +202,7 @@ public class Ori {
      * @return
      */
     public static String getRandomFileString(Object obj, @IntRange(from = 6) int length){
-        String ran = "abcdefghijkmlnopqrstuvwxyz123456789";
+        String ran = "abcdefghijkmlnopqrstuvwxyz0123456789";
         StringBuilder builder = new StringBuilder();
         int index = obj.hashCode() % ran.length();
         builder.append(ran.charAt(index)).append(File.separator).append(getRandomString(length));
@@ -224,18 +214,14 @@ public class Ori {
      * @param path 例如: "test/image/head"
      * @return null ：保存失败
      */
-    public static String saveBitmap(Bitmap mBitmap, String path) {
-        return saveBitmap(mBitmap, path, null);
+    public static String saveBitmap(Context context, Bitmap mBitmap, String path) {
+        return saveBitmap(context, mBitmap, path, null);
     }
-    public static String saveBitmap(Bitmap mBitmap, String path, String fileName) {
+
+    public static String saveBitmap(Context context, Bitmap mBitmap, String path, String fileName) {
         String savePath;
         File filePic;
-        if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-            savePath = Environment.getExternalStorageDirectory().getPath() + File.separator + path + File.separator;
-        } else {
-            Log.e("ORI", "saveBitmap : sdcard not mounted");
-            return null;
-        }
+        savePath = getSaveFilePath(context, Environment.DIRECTORY_PICTURES);
         if(TextUtils.isEmpty(fileName)){
             savePath += (getRandomString(8) + ".jpg");
         }else {
@@ -266,29 +252,18 @@ public class Ori {
      * @return null ：保存失败
      */
     public static String saveBitmapWithAppNamePath(Bitmap mBitmap, Context context , boolean isRandomFile) {
-        String path;
-        int labelRes = context.getApplicationInfo().labelRes;
-        if(labelRes == 0){
-            path = "ori" + File.separator + "image";
-        } else {
-            path =  context.getResources().getString(labelRes) + File.separator + "image";
-        }
-        String savePath;
         File filePic;
-        if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-            savePath = Environment.getExternalStorageDirectory().getPath() + File.separator + path + File.separator;
-        } else {
-            Log.e("ORI", "saveBitmap : sdcard not mounted");
-            return null;
-        }
+        StringBuilder savePath = new StringBuilder(getSaveFilePath(context, Environment.DIRECTORY_PICTURES));
         if(isRandomFile){
-            savePath += (getRandomFileString(mBitmap, 8) + ".jpg");
+            savePath.append(getRandomFileString(mBitmap, 8))
+                    .append(".jpg");
         }else {
-            savePath += (getRandomString(8) + ".jpg");
+            savePath.append(getRandomString(8))
+                    .append(".jpg");
         }
-
+        String save_path = savePath.toString();
         try {
-            filePic = new File(savePath);
+            filePic = new File(save_path);
             if (!filePic.exists()) {
                 if(filePic.getParentFile() != null) {
                     filePic.getParentFile().mkdirs();
@@ -303,7 +278,7 @@ public class Ori {
             Log.e("ORI", "saveBitmap : " + e.getMessage());
             return null;
         }
-        return savePath;
+        return save_path;
     }
 
     /**
@@ -312,12 +287,33 @@ public class Ori {
      * @return
      */
     public static String getSaveFilePath(Context context){
-        int labelRes = context.getApplicationInfo().labelRes;
-        if(labelRes == 0){
-            return Environment.getExternalStorageDirectory().getPath() + File.separator + "ori" + File.separator;
-        } else {
-            return Environment.getExternalStorageDirectory().getPath() + File.separator + context.getResources().getString(labelRes) + File.separator;
+        return getSaveFilePath(context, Environment.DIRECTORY_DOCUMENTS);
+    }
+
+    /**
+     * 获取统一保存路径
+     *   sdk-version > 29 即 android 10 以上时 不允许在根目录 创建文件夹
+     *      解决：targetApi 28 及以下 可以 {@link android.content.pm.ApplicationInfo#targetSdkVersion}
+     *            或者换地方 {@link Context#getExternalFilesDir(String)}
+     * @param context
+     * @param type      文件类型  比如 {@link Environment#DIRECTORY_MUSIC}
+     * @return
+     */
+    public static String getSaveFilePath(Context context, String type){
+        String rootPath;
+        if((Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED))
+                || context.getApplicationInfo().targetSdkVersion < Build.VERSION_CODES.Q) {
+            int labelRes = context.getApplicationInfo().labelRes;
+            if (labelRes == 0) {
+                rootPath = Environment.getExternalStorageDirectory().getPath() + File.separator + "ori" + File.separator + type + File.separator;
+            } else {
+                rootPath = Environment.getExternalStorageDirectory().getPath() +
+                        File.separator + context.getResources().getString(labelRes) + File.separator + type + File.separator;
+            }
+        }else {
+            rootPath = context.getExternalFilesDir(type).getPath() + File.separator;
         }
+        return rootPath;
     }
 
 
@@ -382,6 +378,33 @@ public class Ori {
         Editable editable = editText.getText();
         if(editable != null && !TextUtils.isEmpty(editable.toString())){
             return editable.toString();
+        }
+        return null;
+    }
+
+    /**
+     * 获取输入控件的值
+     * @param editText
+     * @return def ： 无值 反之 String
+     */
+    public static int getEditIntContent(EditText editText, int def){
+        Integer intContent = getEditIntContent(editText);
+        return intContent == null? def : intContent;
+    }
+
+    /**
+     * 获取输入控件的值
+     * @param editText
+     * @return null ： 无值 反之 String
+     */
+    public static Integer getEditIntContent(EditText editText){
+        Editable editable = editText.getText();
+        if(editable != null && !TextUtils.isEmpty(editable.toString())){
+            try {
+                return Integer.parseInt(editable.toString());
+            }catch (NumberFormatException e){
+                return null;
+            }
         }
         return null;
     }

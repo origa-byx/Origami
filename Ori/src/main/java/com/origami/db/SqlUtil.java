@@ -15,18 +15,18 @@ import java.util.List;
  * @date: {2021-06-25}
  * @info:
  **/
-public class SqlUtil<T> {
+public class SqlUtil<T extends DbBean> {
 
     final String db_name;
-    final Field[] fields;
+    final List<Field> fields;
     final Constructor<T> constructor;
     Field key;
 
-    public static <S> SqlUtil<S> newInstance(S t) {
+    public static <S extends DbBean> SqlUtil<S> newInstance(S t) {
         return new SqlUtil(t.getClass());
     }
 
-    public static <S> SqlUtil<S> newInstance(Class<S> sClass) {
+    public static <S extends DbBean> SqlUtil<S> newInstance(Class<S> sClass) {
         return new SqlUtil(sClass);
     }
 
@@ -40,17 +40,26 @@ public class SqlUtil<T> {
         DbName dbName = aClass.getAnnotation(DbName.class);
         if(dbName == null || TextUtils.isEmpty(dbName.value())){ throw new RuntimeException("miss Dbname"); }
         db_name = dbName.value();
-        fields = aClass.getDeclaredFields();
+        fields = new ArrayList<>();
+        for (Field field : aClass.getDeclaredFields()) {
+            if(field.getAnnotation(Item.class) != null){
+                fields.add(field);
+            }else if(field.getAnnotation(Key.class) != null){
+                fields.add(field);
+                key = field;
+            }
+        }
         try {
             constructor = aClass.getDeclaredConstructor();
             if(!constructor.isAccessible()){ constructor.setAccessible(true); }
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
-        for (Field field : fields) {
-            if(field.getAnnotation(Key.class) != null){ key = field; break; }
-        }
         if(key == null){ throw new RuntimeException("miss main key"); }
+    }
+
+    public List<T> selectDataBase(){
+        return selectDataBase(null, 0, 0);
     }
 
     public List<T> selectDataBase(T data){
@@ -62,30 +71,32 @@ public class SqlUtil<T> {
         sql.append(db_name);
         boolean firstAdd = true;
         List<String> obj_args = new ArrayList<>();
-        for (Field field : fields) {
-            try {
-                Object o = field.get(data);
-                if(o != null){
-                    if(firstAdd){
-                        sql.append(" WHERE ");
-                        firstAdd = false;
-                    }else {
-                        sql.append(" AND ");
+        if(data != null) {
+            for (Field field : fields) {
+                try {
+                    Object o = field.get(data);
+                    if (o != null) {
+                        if (firstAdd) {
+                            sql.append(" WHERE ");
+                            firstAdd = false;
+                        } else {
+                            sql.append(" AND ");
+                        }
+                        sql
+                                .append(" ")
+                                .append(field.getName())
+                                .append("=");
+                        Class<?> type = field.getType();
+                        if (type == String.class) {//string
+                            sql.append("?");
+                            obj_args.add((String) o);
+                        } else {
+                            sql.append(o);
+                        }
                     }
-                    sql
-                            .append(" ")
-                            .append(field.getName())
-                            .append("=");
-                    Class<?> type = field.getType();
-                    if(type == String.class) {//string
-                        sql.append("?");
-                        obj_args.add((String) o);
-                    }else {
-                        sql.append(o);
-                    }
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
                 }
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
             }
         }
         if(pageSize != 0){
@@ -140,6 +151,7 @@ public class SqlUtil<T> {
                     }
                 }
             }
+            bean.readAndThen();
             faceDates.add(bean);
         }
         cursor.close();
@@ -154,7 +166,6 @@ public class SqlUtil<T> {
     public void deleteDataBase(T data){
         StringBuilder sql = new StringBuilder("DELETE FROM ");
         sql.append(db_name);
-        Field[] fields = data.getClass().getDeclaredFields();
         boolean firstAdd = true;
         List<Object> obj_args = new ArrayList<>();
         for (Field field : fields) {
@@ -219,7 +230,7 @@ public class SqlUtil<T> {
         Cursor cursor = Db.doReadSql(sqlId, null);
         if(cursor.moveToFirst()){
             try {
-                key.set(data,cursor.getInt(0));
+                key.set(data, cursor.getInt(0));
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }
