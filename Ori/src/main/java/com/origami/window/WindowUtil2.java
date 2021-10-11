@@ -3,9 +3,12 @@ package com.origami.window;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.AppOpsManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
@@ -13,6 +16,7 @@ import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -20,6 +24,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -39,6 +44,11 @@ import java.lang.reflect.Method;
  * @info:
  **/
 public class WindowUtil2 {
+
+    int p_x = 0, p_y = 0;
+    float p_dark = 0;
+
+    private final int showAnimatorTY = Dp2px.dp2px(100);
 
     private final WeakReference<Activity> mActivity;
     private View bindView;
@@ -71,7 +81,7 @@ public class WindowUtil2 {
             paramsWindow.type = WindowManager.LayoutParams.LAST_APPLICATION_WINDOW;
         }
         paramsWindow.gravity = Gravity.CENTER;
-        paramsWindow.dimAmount = 0;
+        paramsWindow.dimAmount = p_dark;
         mActivity = new WeakReference<>(activity);
     }
 
@@ -164,7 +174,7 @@ public class WindowUtil2 {
      * @return
      */
     public WindowUtil2 setBackDark(@FloatRange(from = 0, to = 1f) float val){
-        paramsWindow.dimAmount = val;
+        p_dark = paramsWindow.dimAmount = val;
         return this;
     }
 
@@ -179,8 +189,8 @@ public class WindowUtil2 {
 
     public WindowUtil2 setLocation(int gravity, int x, int y){
         paramsWindow.gravity = gravity;
-        paramsWindow.x = x;
-        paramsWindow.y = y;
+        p_x = paramsWindow.x = x;
+        p_y = paramsWindow.y = y;
         return this;
     }
 
@@ -247,8 +257,6 @@ public class WindowUtil2 {
 
     public void showWithAnimator(){
         if(showFlag){ return; }
-        int translationY = Dp2px.dp2px(100);
-        bindView.setTranslationY(translationY);
         bindView.setAlpha(0);
         window.addView(bindView, paramsWindow);
         keyBack();
@@ -256,10 +264,13 @@ public class WindowUtil2 {
         if(showAnimator == null){
             showAnimator = ValueAnimator.ofFloat(0,1f);
             showAnimator.setDuration(400);
+            showAnimator.setInterpolator(new DecelerateInterpolator());
             showAnimator.addUpdateListener(animation -> {
                 float value = (float) animation.getAnimatedValue();
                 bindView.setAlpha(value);
-                bindView.setTranslationY(translationY * (1f - value));
+                paramsWindow.dimAmount = p_dark * value;
+                paramsWindow.y = p_y + (int) (showAnimatorTY * (1f - value));
+                updateWindow();
             });
         }
         showAnimator.start();
@@ -428,7 +439,6 @@ public class WindowUtil2 {
         windowUtil2.showWithAnimator();
     }
 
-
     /***
      * 检查悬浮窗开启权限
      * @param context
@@ -463,13 +473,13 @@ public class WindowUtil2 {
                 if (appOpsMgr == null)
                     return false;
                 int mode;
-                if(Build.VERSION.SDK_INT > Build.VERSION_CODES.R) {
-                    mode= appOpsMgr.unsafeCheckOpNoThrow("android:system_alert_window", android.os.Process.myUid(), context
-                            .getPackageName());
-                }else {
-                    mode= appOpsMgr.checkOpNoThrow("android:system_alert_window", android.os.Process.myUid(), context
-                            .getPackageName());
-                }
+//                if(Build.VERSION.SDK_INT > Build.VERSION_CODES.R) {
+//                    mode= appOpsMgr.unsafeCheckOpNoThrow("android:system_alert_window", android.os.Process.myUid(), context
+//                            .getPackageName());
+//                }else {
+                mode= appOpsMgr.checkOpNoThrow("android:system_alert_window", android.os.Process.myUid(), context
+                        .getPackageName());
+//                }
                 return Settings.canDrawOverlays(context) || mode == AppOpsManager.MODE_ALLOWED || mode == AppOpsManager.MODE_IGNORED;
             } else {
                 return Settings.canDrawOverlays(context);

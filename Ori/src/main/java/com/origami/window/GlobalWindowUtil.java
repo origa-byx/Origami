@@ -30,7 +30,7 @@ import com.origami.utils.UiThreadUtil;
  * @info:
  * @deprecated  仅测试 独立于Activity的全局悬浮框   需指引用户手动开启权限
  * 注意 {@link Builder#setCanTouch(boolean)} 的flags false 不然可能会完全屏蔽屏幕事件
- * 外部最好不要多套一层了，不然事件会被先分发到他那里
+ * 外部最好不要多套一层了，不然事件会被先分发到他那里   see -> {@link WindowUtil2} system window bool is true
  **/
 public class GlobalWindowUtil {
 

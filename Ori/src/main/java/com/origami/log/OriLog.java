@@ -6,6 +6,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.origami.origami.base.App;
+import com.origami.service.AppUpdate_service;
 import com.origami.utils.Ori;
 
 import java.io.File;
@@ -19,10 +20,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * @by: origami
  * @date: {2021-07-22}
- * @info:
+ * @info:       30 api 以下在 根目录，以上在 android/data/包名 之中  （target_api 28的话可在根目录创建文件夹）
  **/
 public class OriLog implements Runnable {
 
+    private final String VER;//在日志命名上加入版本
     private final static int MAX_SIZE = 5 * 1024 * 1024;
     private final boolean debug;
     private static OriLog instance;
@@ -33,26 +35,32 @@ public class OriLog implements Runnable {
     @SuppressLint("SimpleDateFormat")
     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
 
-    private final Object lock = new Object();
+    private final Object lock = new Object();//锁对象
     private final AtomicBoolean lock_flag = new AtomicBoolean(false);
     private final LinkedBlockingQueue<OriLogBean> logQueue = new LinkedBlockingQueue<>();
 
-    public static void init(Context context, boolean debug){
-        if(instance == null){ instance = new OriLog(context, debug); }
+    /**
+     * @param context
+     * @param buildConfig_DEBUG     BuildConfig.DEBUG
+     */
+    public static void init(Context context, boolean buildConfig_DEBUG){
+        if(instance == null){ instance = new OriLog(context, buildConfig_DEBUG); }
         new Thread(instance).start();
+        instance.log_print(OriLogBean.i(OriLogBean.dateFormat.format(new Date())));
     }
     public synchronized static OriLog getInstance(){
         if(instance == null){ throw new RuntimeException("you must be init<OriLog> at first"); }
         return instance;
     }
     private OriLog(Context context, boolean debug){
+        this.VER = Ori.getVersion(context).version;
         this.debug = debug;
         this.path = Ori.getSaveFilePath(context) + "log";
     }
 
     public void log_print(OriLogBean bean){
         if(bean == null){ return; }
-        if(debug && !TextUtils.isEmpty(bean.msg)){ Log.e("ORI", bean.msg); }
+        if(debug && !TextUtils.isEmpty(bean.msg)){ Log.e(bean.tag, bean.msg); }
         logQueue.offer(bean);
         if(lock_flag.get()){
             synchronized (lock){
@@ -83,6 +91,10 @@ public class OriLog implements Runnable {
     }
 
     private void print(OriLogBean logBean){
+        print(logBean.toHtml());
+    }
+
+    private void print(String html){
         FileWriter fileWriter = null;
         try {
             File file = new File(getPath());
@@ -93,7 +105,7 @@ public class OriLog implements Runnable {
             }else if(file.length() > MAX_SIZE){//当前文件大于5M了，下一次创建新的log文件
                 index++;
             }
-            fileWriter.write(logBean.toHtml());
+            fileWriter.write(html);
             fileWriter.flush();
             fileWriter.close();
         } catch (IOException e) {
@@ -114,7 +126,7 @@ public class OriLog implements Runnable {
             index = 0;
             deleteOverDateFile();
         }
-        return path + File.separator + formatTime + File.separator + "log" + index + ".ori";
+        return path + File.separator + formatTime + File.separator + "log-" + VER + "-" + index + ".ori";
     }
 
     private void deleteOverDateFile() {

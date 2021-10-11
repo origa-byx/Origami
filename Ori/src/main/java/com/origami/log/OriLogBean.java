@@ -2,6 +2,9 @@ package com.origami.log;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+
+import androidx.annotation.NonNull;
 
 import com.origami.utils.Ori;
 
@@ -22,12 +25,14 @@ public class OriLogBean {
             "body{padding:20px}" +
             "div{color:#000000;text-shadow: 1px 1px 5px #ffffff;border-radius:5px;word-break:break-all}" +
             "img {width: 30%;height: auto;float:left;z-index:-1;margin-right:5px}" +
+            ".init{background-color:#fdfdfd;width:100%;float:left;padding:5px 50px;margin-bottom:3px;box-sizing: border-box; }" +
             ".d{background-color:#eeeeee}" +
             ".v{background-color:#0aa858}" +
             ".e{background-color:#f4433c;}" +
             ".w{background-color:#ffbc32;}" +
             ".t{ width:20%;margin-right:5px;text-align:center;float:left;padding:5px 0px;margin-bottom:3px; }" +
-            ".m{ width:78%;float:left;padding:5px 10px;margin-bottom:3px;box-sizing: border-box; }" +
+            ".n{ width:10%;margin-right:5px;text-align:center;float:left;padding:5px 0px;margin-bottom:3px; }" +
+            ".m{ width:67%;float:left;padding:5px 10px;margin-bottom:3px;box-sizing: border-box; }" +
             "</style>\n";
 
     @SuppressLint("SimpleDateFormat")
@@ -35,12 +40,24 @@ public class OriLogBean {
 
     //d v e w
     private final String level;
+    public String tag;
+    public String txt;
     public String msg;
     public Throwable throwable;
 
-    private OriLogBean(String level, String msg, Throwable throwable) {
+    private OriLogBean(String msg) {
+        this.level = null;
+        this.txt = toSafeString(msg);
+        this.msg = msg;
+        this.tag = "ORI";
+        this.throwable = null;
+    }
+
+    private OriLogBean(String tag, String level, String msg, Throwable throwable, Bitmap... bitmap) {
         this.level = level;
-        this.msg = toSafeString(msg);
+        this.txt = toSafeString(msg + getBitmapLogString(bitmap));
+        this.msg = msg;
+        this.tag = tag == null? "NULL": tag;
         this.throwable = throwable;
     }
 
@@ -51,20 +68,23 @@ public class OriLogBean {
         return msg;
     }
 
-    public static OriLogBean d(String msg, Bitmap... bitmaps){
-        return new OriLogBean("d", msg + getBitmapLogString(bitmaps), null);
+    public static OriLogBean i(String msg){
+        return new OriLogBean(msg);
     }
-    public static OriLogBean v(String msg, Bitmap... bitmaps){
-        return new OriLogBean("v", msg + getBitmapLogString(bitmaps), null);
+    public static OriLogBean d(@NonNull String tag, @NonNull String msg, Bitmap... bitmaps){
+        return new OriLogBean(tag, "d", msg, null, bitmaps);
     }
-    public static OriLogBean w(String msg, Bitmap... bitmaps){
-        return new OriLogBean("w", msg + getBitmapLogString(bitmaps), null);
+    public static OriLogBean v(@NonNull String tag, @NonNull String msg, Bitmap... bitmaps){
+        return new OriLogBean(tag, "v", msg, null, bitmaps);
     }
-    public static OriLogBean e(String msg, Throwable throwable, Bitmap... bitmaps){
-        return new OriLogBean("e", msg + "::" + getThrowableMsg(throwable) + getBitmapLogString(bitmaps), throwable);
+    public static OriLogBean w(@NonNull String tag, @NonNull String msg, Bitmap... bitmaps){
+        return new OriLogBean(tag, "w", msg, null, bitmaps);
     }
-    public static OriLogBean e(Throwable throwable){
-        return new OriLogBean("e", getThrowableMsg(throwable), throwable);
+    public static OriLogBean e(@NonNull String tag, @NonNull String msg, Throwable throwable, Bitmap... bitmaps){
+        return new OriLogBean(tag, "e", msg + "::" + getThrowableMsg(throwable), throwable, bitmaps);
+    }
+    public static OriLogBean e(@NonNull String tag, Throwable throwable){
+        return new OriLogBean(tag, "e", getThrowableMsg(throwable), throwable);
     }
 
     private static String getThrowableMsg(Throwable throwable){
@@ -84,7 +104,8 @@ public class OriLogBean {
     }
 
     public String toHtml(){
-        StringBuilder placeString = new StringBuilder(msg);
+        if(level == null){ return String.format("<div class=\"init\">%s</div>", toSafeString(txt)); }
+        StringBuilder placeString = new StringBuilder(txt);
         if(throwable != null){
             StackTraceElement[] stackTrace = throwable.getStackTrace();
             if(stackTrace.length > 0 && stackTrace[0] != null){
@@ -96,9 +117,12 @@ public class OriLogBean {
             }
         }
         return String.format(
-                "<div class=\"t %s\">%s</div><div class=\"m %s\">%s</div>",
-                level, dateFormat.format(new Date()), level, placeString
-        );
+                "<div class=\"t %s\">%s</div>" +
+                "<div class=\"n %s\">%s</div>" +
+                "<div class=\"m %s\">%s</div>",
+                level, dateFormat.format(new Date()),
+                level, tag,
+                level, placeString );
     }
 
 }

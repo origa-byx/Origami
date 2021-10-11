@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
+import android.nfc.Tag;
 import android.os.Build;
 import android.os.IBinder;
 import android.text.TextUtils;
@@ -43,6 +44,8 @@ import okhttp3.OkHttpClient;
  *         startService(intent);
  **/
 public abstract class AppUpdate_service extends Service {
+
+    private static final String TAG = "AppUpdate_service";
 
     /**
      * @return app icon
@@ -119,7 +122,7 @@ public abstract class AppUpdate_service extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if(intent != null){ downUrl = intent.getStringExtra("url"); }else { stopSelf(); }
         if(TextUtils.isEmpty(downUrl)){
-            Ori.e(new Exception("缺失下载地址参数-> url"));
+            Ori.e(TAG, new Exception("缺失下载地址参数-> url"));
             stopSelf();
             return super.onStartCommand(intent, flags, startId);
         }
@@ -147,7 +150,7 @@ public abstract class AppUpdate_service extends Service {
                     @Override
                     public void onError(Response<File> response) {
                         super.onError(response);
-                        Ori.e("下载出错" ,response.getException());
+                        Ori.e(TAG,"下载出错" ,response.getException());
                     }
                 });
         return super.onStartCommand(intent, flags, startId);

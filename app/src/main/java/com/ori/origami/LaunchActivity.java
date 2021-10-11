@@ -42,11 +42,6 @@ public class LaunchActivity extends AnnotationActivity {
                 Manifest.permission.WRITE_EXTERNAL_STORAGE}, new RequestPermissionNext() {
             @Override
             public void next() {
-//                try {
-//                    doB(getResources().getAssets().open("test.jpg"));
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
 //                Intent intent = new Intent(LaunchActivity.this, Test_recycler.class);
 //                startActivity(intent);
                 OriImageSelect.builder()

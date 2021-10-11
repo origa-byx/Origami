@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.os.RemoteException;
 
 import androidx.annotation.DrawableRes;
+import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 
 import com.origami.activity.OriImageSelect;
@@ -32,8 +33,8 @@ public class NotificationUtil {
 
     Builder builder;
 
-    public static Builder builder(Activity activity){
-        return new Builder(activity);
+    public static Builder builder(Activity activity, String channel_id ,String channel_name){
+        return new Builder(activity).setId_Name(channel_id, channel_name);
     }
 
     public static class Builder{
@@ -54,6 +55,8 @@ public class NotificationUtil {
         String id;
         //通知通道名 （一般叙述会显示在设置界面） 比如 聊天消息通知
         String name;
+        //通知重要程度
+        int importance = 0;
 
         /**
          * 创建活动意图
@@ -115,9 +118,19 @@ public class NotificationUtil {
          * @param name      通知通道名 （一般叙述会显示在设置界面） 比如 聊天消息通知
          * @return  this
          */
-        public Builder setId_Name(String id ,String name) {
+        private Builder setId_Name(String id ,String name) {
             this.id = id;
             this.name = name;
+            return this;
+        }
+
+        /**
+         * 通知重要程度
+         * @param importance  eg.  {@link NotificationManager#IMPORTANCE_HIGH}
+         * @return
+         */
+        public Builder setImportance(int importance) {
+            this.importance = importance;
             return this;
         }
 
@@ -132,7 +145,6 @@ public class NotificationUtil {
     private NotificationUtil(Builder builder) {
         this.builder = builder;
         mNotificationManager = (NotificationManager) builder.activity.getSystemService(Context.NOTIFICATION_SERVICE);
-
     }
 
     /**
@@ -146,7 +158,8 @@ public class NotificationUtil {
 
     public void show(int id, boolean... args) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            addChannelIfNoHas(builder.id, builder.name);
+            if(builder.importance == 0){ builder.importance = NotificationManager.IMPORTANCE_DEFAULT; }
+            NotificationChannelUtil.createNotificationChannel(mNotificationManager, builder.id, builder.name, builder.importance);
             Notification.Builder builder = new Notification.Builder(this.builder.activity, this.builder.id)
                     .setContentTitle(this.builder.title)
                     .setContentIntent(this.builder.pendingIntent)
@@ -155,35 +168,19 @@ public class NotificationUtil {
             notification = builder.build();
         } else {
             final boolean[] flag = new boolean[]{ false, false, false };
-            if(args != null){
-                System.arraycopy(args, 0, flag, 0, args.length);
-            }
-            //构造Builder对象
+            if(args != null){ System.arraycopy(args, 0, flag, 0, args.length); }
             NotificationCompat.Builder builder = new NotificationCompat.Builder(this.builder.activity)
                     .setSmallIcon(this.builder.iconRes)
                     .setContentTitle(this.builder.title)
                     .setContentText(this.builder.contentText)
                     .setContentIntent(this.builder.pendingIntent)
                     .setPriority(NotificationCompat.PRIORITY_HIGH);
-//                    .setDefaults(Notification.DEFAULT_ALL)//全部
-//                    .setDefaults(Notification.DEFAULT_LIGHTS)//闪光灯
-//                    .setDefaults(Notification.DEFAULT_VIBRATE)//震动
-//                    .setDefaults(Notification.DEFAULT_SOUND)//声音
             if(flag[0]){ builder.setDefaults(Notification.DEFAULT_VIBRATE); }
             if(flag[1]){ builder.setDefaults(Notification.DEFAULT_SOUND); }
             if(flag[2]){ builder.setDefaults(Notification.DEFAULT_LIGHTS); }
             notification = builder.build();
         }
         mNotificationManager.notify(id, notification);
-    }
-
-    public void addChannelIfNoHas(String id, String name){
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-            try {
-                if(mNotificationManager.getNotificationChannel(id) != null){ return; }
-            }catch (RuntimeException e){ /*do nothing*/ }
-            mNotificationManager.createNotificationChannel(new NotificationChannel(id, name, NotificationManager.IMPORTANCE_HIGH));
-        }
     }
 
 }

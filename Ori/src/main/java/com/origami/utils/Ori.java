@@ -2,6 +2,8 @@ package com.origami.utils;
 
 import android.app.ActivityManager;
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -22,6 +24,7 @@ import android.widget.EditText;
 
 import androidx.annotation.AttrRes;
 import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
 
 import com.origami.log.OriLog;
 import com.origami.log.OriLogBean;
@@ -43,6 +46,28 @@ import java.util.Random;
  * @info:
  **/
 public class Ori {
+
+    /**
+     * 获取版本信息
+     */
+    public static Version getVersion(Context context) {
+        PackageManager packageManager = context.getPackageManager();
+        // getPackageName()是你当前类的包名，0代表是获取版本信息
+        PackageInfo packInfo;
+        try {
+            packInfo = packageManager.getPackageInfo(context.getPackageName(), 0);
+            long versionCode;
+            if(Build.VERSION.SDK_INT > Build.VERSION_CODES.R){
+                versionCode = packInfo.getLongVersionCode();
+            }else {
+                versionCode = packInfo.versionCode;
+            }
+            return new Version(packInfo.versionName, versionCode);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+            return new Version("0.0.0", Long.MAX_VALUE);
+        }
+    }
 
     /**
      * md5加密
@@ -128,9 +153,9 @@ public class Ori {
     /**
      * 大概就是生成默认的selector drawable 给 一个按钮
      * @param context
-     * @param color_out
-     * @param color_in
-     * @param okIsHasBor
+     * @param color_out     边框
+     * @param color_in      内部
+     * @param okIsHasBor   true： 按下是切换为 有边框的
      * @return
      */
     public static StateListDrawable getDefSelectorBackgroundButtonDrawable(Context context, int color_out, int color_in, boolean okIsHasBor){
@@ -158,12 +183,15 @@ public class Ori {
         }
     }
 
+    public static ColorStateList getSelectorColorStateList(int color_nor, int color_per){
+        return getSelectorColorStateList(color_nor, color_per, false);
+    }
     /**
      * 配合{@link #getDefSelectorBackgroundButtonDrawable(Context, int, int, boolean)} }
      *      用来生成颜色的
-     * @param color_nor
-     * @param color_per
-     * @param okIsHasBor
+     * @param color_nor     正常
+     * @param color_per     按下时
+     * @param okIsHasBor    false 按照上面的情况  true  反过来
      * @return
      */
     public static ColorStateList getSelectorColorStateList(int color_nor, int color_per, boolean okIsHasBor){
@@ -181,7 +209,7 @@ public class Ori {
      * @param length    时间附加的随机字符长度
      * @return
      */
-    public static String getRandomString(@IntRange(from = 6) int length){
+    public static String getRandomString(int length){
         String ran = "abcdefghijkmlnopqrstuvwxyz0123456789";
         Random random = new Random();
         StringBuilder builder = new StringBuilder();
@@ -199,7 +227,7 @@ public class Ori {
     /**
      * 产生随机文件名，对于可能会有大量文件的情况下，防止单一文件夹内文件过多导致的读取缓慢生成随机文件夹
      * @param obj  任意对象进行随机文件夹的生成  -> ran charAt -> obj.hashCode() % ran.length()
-     * @return
+     * @return  eg.   b/{@link #getRandomString(int)}
      */
     public static String getRandomFileString(Object obj, @IntRange(from = 6) int length){
         String ran = "abcdefghijkmlnopqrstuvwxyz0123456789";
@@ -221,7 +249,7 @@ public class Ori {
     public static String saveBitmap(Context context, Bitmap mBitmap, String path, String fileName) {
         String savePath;
         File filePic;
-        savePath = getSaveFilePath(context, Environment.DIRECTORY_PICTURES);
+        savePath = getSaveFilePath(context, Environment.DIRECTORY_PICTURES) + path + File.separator;
         if(TextUtils.isEmpty(fileName)){
             savePath += (getRandomString(8) + ".jpg");
         }else {
@@ -317,10 +345,13 @@ public class Ori {
                 || context.getApplicationInfo().targetSdkVersion < Build.VERSION_CODES.Q) {
             int labelRes = context.getApplicationInfo().labelRes;
             if (labelRes == 0) {
-                rootPath = Environment.getExternalStorageDirectory().getPath() + File.separator + "ori" + File.separator + type + File.separator;
+                rootPath = Environment.getExternalStorageDirectory().getPath() +
+                        File.separator + "ori" +
+                        File.separator + type + File.separator;
             } else {
                 rootPath = Environment.getExternalStorageDirectory().getPath() +
-                        File.separator + context.getResources().getString(labelRes) + File.separator + type + File.separator;
+                        File.separator + context.getResources().getString(labelRes) +
+                        File.separator + type + File.separator;
             }
         }else {
             rootPath = context.getExternalFilesDir(type).getPath() + File.separator;
@@ -331,7 +362,6 @@ public class Ori {
 
     /**
      * bitmap转化位base64
-     *
      * @param bitmap
      * @return
      */
@@ -371,12 +401,11 @@ public class Ori {
         return result;
     }
 
-
     public static Bitmap base64ToBitmap(String base64Data) {
         try {
             byte[] bytes = Base64.decode(base64Data, Base64.DEFAULT);
             return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-        } catch (Exception e) { }
+        } catch (Exception e) { /* do nothing */ }
         return null;
     }
 
@@ -397,7 +426,7 @@ public class Ori {
     /**
      * 获取输入控件的值
      * @param editText
-     * @return def ： 无值 反之 String
+     * @return def ： 无值 反之 int
      */
     public static int getEditIntContent(EditText editText, int def){
         Integer intContent = getEditIntContent(editText);
@@ -407,7 +436,7 @@ public class Ori {
     /**
      * 获取输入控件的值
      * @param editText
-     * @return null ： 无值 反之 String
+     * @return null ： 无值 反之 int
      */
     public static Integer getEditIntContent(EditText editText){
         Editable editable = editText.getText();
@@ -428,24 +457,15 @@ public class Ori {
      * @return
      */
     public static boolean isServiceRunning(Context mContext, String className) {
-
-        boolean isRunning = false;
-        ActivityManager activityManager = (ActivityManager) mContext
-                .getSystemService(Context.ACTIVITY_SERVICE);
-        List<ActivityManager.RunningServiceInfo> serviceList = activityManager
-                .getRunningServices(30);
-
-        if (!(serviceList.size() > 0)) {
-            return false;
-        }
-
+        ActivityManager activityManager = (ActivityManager) mContext.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningServiceInfo> serviceList = activityManager.getRunningServices(30);
+        if (serviceList.isEmpty()) { return false; }
         for (int i = 0; i < serviceList.size(); i++) {
             if (serviceList.get(i).service.getClassName().equals(className)) {
-                isRunning = true;
-                break;
+                return true;
             }
         }
-        return isRunning;
+        return false;
     }
 
     /**
@@ -481,24 +501,42 @@ public class Ori {
     }
 
     //同步文件
-    public void syncFile(Context context, String path) {
-        MediaScannerConnection.scanFile(context, new String[] { path }, null, null);
+    public void syncFile(Context context, List<String> paths) {
+        if(paths == null || paths.isEmpty()){ return; }
+        MediaScannerConnection.scanFile(context, paths.toArray(new String[0]), null, null);
     }
 
-    public static void d(String msg, Bitmap... bitmaps){
-        OriLog.getInstance().log_print(OriLogBean.d(msg, bitmaps));
+    //同步文件
+    public void syncFile(Context context, String... path) {
+        if(path == null || path.length == 0){ return; }
+        MediaScannerConnection.scanFile(context, path, null, null);
     }
-    public static void v(String msg, Bitmap... bitmaps){
-        OriLog.getInstance().log_print(OriLogBean.v(msg, bitmaps));
+
+    public static void d(@NonNull String tag, @NonNull String msg, Bitmap... bitmaps){
+        OriLog.getInstance().log_print(OriLogBean.d(tag, msg, bitmaps));
     }
-    public static void w(String msg, Bitmap... bitmaps){
-        OriLog.getInstance().log_print(OriLogBean.w(msg, bitmaps));
+    public static void v(@NonNull String tag, @NonNull String msg, Bitmap... bitmaps){
+        OriLog.getInstance().log_print(OriLogBean.v(tag, msg, bitmaps));
     }
-    public static void e(String msg, Throwable throwable, Bitmap... bitmaps){
-        OriLog.getInstance().log_print(OriLogBean.e(msg, throwable, bitmaps));
+    public static void w(@NonNull String tag, @NonNull String msg, Bitmap... bitmaps){
+        OriLog.getInstance().log_print(OriLogBean.w(tag, msg, bitmaps));
     }
-    public static void e(Throwable throwable){
-        OriLog.getInstance().log_print(OriLogBean.e(throwable));
+    public static void e(@NonNull String tag, @NonNull String msg, Throwable throwable, Bitmap... bitmaps){
+        OriLog.getInstance().log_print(OriLogBean.e(tag, msg, throwable, bitmaps));
+    }
+    public static void e(@NonNull String tag, Throwable throwable){
+        OriLog.getInstance().log_print(OriLogBean.e(tag, throwable));
+    }
+
+    public static class Version{
+
+        public String version;
+        public long verCode;
+
+        public Version(String version, long verCode) {
+            this.version = version;
+            this.verCode = verCode;
+        }
     }
 
 }
