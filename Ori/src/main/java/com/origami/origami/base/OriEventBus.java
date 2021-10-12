@@ -2,15 +2,21 @@ package com.origami.origami.base;
 
 
 import android.app.Activity;
+import android.app.Application;
 import android.util.Log;
 
 import androidx.fragment.app.Fragment;
 
+import com.origami.utils.UiThreadUtil;
+
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @by: origami
@@ -19,13 +25,17 @@ import java.util.Set;
  **/
 public class OriEventBus {
 
+    public static final int ui_thread = RunThread.MAIN_UI;
+    public static final int current_thread = RunThread.CURRENT;
+    public static final int new_thread = RunThread.NEW_THREAD;
+
     private final static String TAG = "OriEventBus";
 
-    private final static Map<String, Set<Event>> EVENT_MAP = new HashMap<>();
+    private final static Map<String, Set<BaseEvent>> EVENT_MAP = new ConcurrentHashMap<>();
 
-    public static void registerEvent(String tag, Event event){
+    public static void registerEvent(String tag, BaseEvent event){
         if(tag == null || event == null){ return; }
-        Set<Event> events = EVENT_MAP.get(tag);
+        Set<BaseEvent> events = EVENT_MAP.get(tag);
         if(events == null){ events = new HashSet<>(); }
         if(!events.contains(event)) {
             event.tag = tag;
@@ -36,9 +46,9 @@ public class OriEventBus {
 
     public static void triggerEvent(String tag, Object... args){
         if(tag == null){ return; }
-        Set<Event> events = EVENT_MAP.get(tag);
+        Set<BaseEvent> events = EVENT_MAP.get(tag);
         if(events != null){
-            for (Event event : events) {
+            for (BaseEvent event : events) {
                 event.triggerEvent(args);
             }
         }
@@ -49,11 +59,20 @@ public class OriEventBus {
         EVENT_MAP.remove(tag);
     }
 
-    public static void removeEvent(Event event){
+    public static void removeEvent(BaseEvent event){
         if(event == null){ return; }
         if(EVENT_MAP.get(event.tag) != null){ EVENT_MAP.get(event.tag).remove(event); }
     }
 
+    public static void triggerEventAndRemove(String tag, Object... args) {
+        if(tag == null){ return; }
+        Set<BaseEvent> events = EVENT_MAP.remove(tag);
+        if(events != null){
+            for (BaseEvent event : events) {
+                event.triggerEvent(args);
+            }
+        }
+    }
 
     public @interface RunThread{
         int MAIN_UI = 0;
@@ -61,9 +80,63 @@ public class OriEventBus {
         int NEW_THREAD = 2;
     }
 
-    public static abstract class Event{
+    public static abstract class BaseEvent{
+        protected String tag;
+        public abstract void triggerEvent(Object... args);
+    }
 
-        private String tag;
+    public static abstract class Event2 extends BaseEvent{
+
+        private final int run_on_thread;
+        private final WeakReference<Object> weakReference;
+
+        /**
+         * @param activity
+         * @param run_thread  {@link RunThread}
+         */
+        public Event2(Activity activity, int run_thread) {
+            weakReference = new WeakReference<>(activity);
+            run_on_thread = run_thread;
+        }
+
+        /**
+         * @param fragment
+         * @param run_thread  {@link RunThread}
+         */
+        public Event2(Fragment fragment, int run_thread) {
+            weakReference = new WeakReference<>(fragment);
+            run_on_thread = run_thread;
+        }
+
+        @Override
+        public void triggerEvent(Object... args){
+            Object ob;
+            if((ob = weakReference.get()) != null){
+                Activity oa = ob instanceof Activity ? ((Activity) ob) : null;
+                Fragment of = ob instanceof Fragment ? ((Fragment) ob) : null;
+                if((oa == null || oa.isFinishing()) && (of == null || of.isDetached())){
+                    log_msg("");  return;
+                }
+                switch (run_on_thread){
+                    case RunThread.MAIN_UI:{
+                        UiThreadUtil.getInstance().runOnUiThread(()->{ postEvent(args); });
+                    }break;
+                    case RunThread.CURRENT:{ postEvent(args); }break;
+                    case RunThread.NEW_THREAD:{ new Thread(() -> postEvent(args)).start(); }break;
+                }
+            }else { log_msg(""); }
+        }
+
+        public abstract void postEvent(Object... args);
+
+    }
+
+    /**
+     * @deprecated use {@link Event2} and {@link android.app.Application} extends {@link App}
+     *  or use {@link Event2} and {@link UiThreadUtil#init(Application)} at first
+     */
+    public static abstract class Event extends BaseEvent{
+
         private final int run_on_thread;
         private final WeakReference<Object> weakReference;
 
@@ -85,7 +158,8 @@ public class OriEventBus {
             run_on_thread = run_thread;
         }
 
-        private void triggerEvent(Object... args){
+        @Override
+        public void triggerEvent(Object... args){
             Object ob;
             if((ob = weakReference.get()) != null){
                 Activity oa = ob instanceof Activity ? ((Activity) ob) : null;
@@ -110,7 +184,7 @@ public class OriEventBus {
             }else { log_msg("->weakReference get null"); }
         }
 
-       public abstract void postEvent(Object... args);
+        public abstract void postEvent(Object... args);
 
     }
 
