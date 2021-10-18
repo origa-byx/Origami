@@ -72,9 +72,8 @@ public class TestActivity extends AnnotationActivity {
                     Intent intent = new Intent(TestActivity.this, Test2Act.class);
                     startActivity(intent);
                 }else {
-                    NotificationUtil.builder(TestActivity.this)
+                    NotificationUtil.builder(TestActivity.this, "com.origami.test", "测试")
                             .setIntent(Test2Act.class)
-                            .setId_Name("com.ori.notify", "活动启动")
                             .setIconRes(R.mipmap.ic_launcher)
                             .setTitle("启动2Act")
                             .setContentText("点击此处来启动Test2Act\nclick-click\nclick")
