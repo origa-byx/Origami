@@ -9,8 +9,11 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.widget.EditText;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.origami.activity.OriImageActivity;
@@ -29,11 +32,37 @@ import java.io.InputStream;
 @BContentView(R.layout.activity_launch)
 public class LaunchActivity extends AnnotationActivity {
 
+    NativeRtspPlay nativeRtspPlay;
+
     @BView(R.id.mub)
     EditText editText;
 
+    @BView(R.id.surface)
+    SurfaceView surfaceView;
+
     @Override
-    public void init(@Nullable Bundle savedInstanceState) { }
+    public void init(@Nullable Bundle savedInstanceState) {
+        surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
+            @Override
+            public void surfaceCreated(@NonNull SurfaceHolder holder) {
+                nativeRtspPlay = new NativeRtspPlay();
+                nativeRtspPlay.setNativeWindow(holder.getSurface());
+                new Thread(() -> {
+                    nativeRtspPlay.setUrl("rtsp://admin:a1234567@192.168.0.112:554/h264/ch1/sub/av_stream");
+                }).start();
+            }
+
+            @Override
+            public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
+
+            }
+
+            @Override
+            public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
+                nativeRtspPlay.release();
+            }
+        });
+    }
 
     @BClick(R.id.cl)
     public void onClick(){

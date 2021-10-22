@@ -6,6 +6,7 @@ cmake_minimum_required(VERSION 3.4.1)
 
 #设置生成的so动态库最后输出的路径
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI})
+set(LOCAL_LDLIBS  "-llog -lGLESv1_CM -ldl -lz")
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds them for you.
@@ -39,10 +40,26 @@ add_library( # Sets the name of the library.
         src/main/cpp/ori_rtsp.cpp)
 #动态方式加载 STATIC：表示静态的.a的库 SHARED：表示.so的库。
 add_library(qrdatadecode SHARED IMPORTED)
+
+add_library(avcodec SHARED IMPORTED)
+add_library(avfilter SHARED IMPORTED)
+add_library(avformat SHARED IMPORTED)
+add_library(avutil SHARED IMPORTED)
+add_library(swresample SHARED IMPORTED)
+add_library(swscale SHARED IMPORTED)
+
 #设置要连接的so的相对路径 ${CMAKE_SOURCE_DIR}：表示CMake.txt的当前文件夹路径 ${ANDROID_ABI}：编译时会自动根据CPU架构去选择相应的库
 set_target_properties(qrdatadecode PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libqrdatadecode.so)
+set_target_properties(avcodec PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/libs/${ANDROID_ABI}/libavcodec.so)
+set_target_properties(avfilter PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/libs/${ANDROID_ABI}/libavfilter.so)
+set_target_properties(avformat PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/libs/${ANDROID_ABI}/libavformat.so)
+set_target_properties(avutil PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/libs/${ANDROID_ABI}/libavutil.so)
+set_target_properties(swresample PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/libs/${ANDROID_ABI}/libswresample.so)
+set_target_properties(swscale PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/libs/${ANDROID_ABI}/libswscale.so)
+
 #添加第三方头文件
 target_include_directories(origami PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/include)
+target_include_directories(ori_rtsp PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/include)
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
 # default, you only need to specify the name of the public NDK library
@@ -76,6 +93,14 @@ target_link_libraries( # Specifies the target library.
 
 target_link_libraries( # Specifies the target library.
         ori_rtsp
+        android
+
+        avcodec
+        avfilter
+        avformat
+        avutil
+        swresample
+        swscale
         # Links the target library to the log library
         # included in the NDK.
         ${log-lib})
