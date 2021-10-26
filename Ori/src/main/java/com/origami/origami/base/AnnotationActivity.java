@@ -16,11 +16,14 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.databinding.DataBindingUtil;
+import androidx.databinding.ViewDataBinding;
 
 
 import com.origami.activity.OriImageSelect;
@@ -72,20 +75,8 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
 
     public abstract void init(@Nullable Bundle savedInstanceState);
 
-    @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState){
-        super.onCreate(savedInstanceState);
-        Log.e("ORI",String.format("init -> %s", this.getClass().getSimpleName()));
-        BContentView contentView = getClass().getAnnotation(BContentView.class);
-        if(contentView != null){
-            setContentView(contentView.value());
-        }else {
-            setContentView(getLayout());
-            setStatusBar();
-            init(savedInstanceState);
-            AnnotationActivityManager.addActivity(this);
-            return;
-        }
+    protected void initContentView(@LayoutRes int resId){
+        setContentView(resId);
         Field[] fields = getClass().getDeclaredFields();
         for (Field field : fields) {
             BView bindMyView = field.getAnnotation(BView.class);
@@ -103,6 +94,22 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
                     e.printStackTrace();
                 }
             }
+        }
+    }
+
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState){
+        super.onCreate(savedInstanceState);
+        Log.e("ORI",String.format("init -> %s", this.getClass().getSimpleName()));
+        BContentView contentView = getClass().getAnnotation(BContentView.class);
+        if(contentView != null){
+            initContentView(contentView.value());
+        }else {
+            setContentView(getLayout());
+            setStatusBar();
+            init(savedInstanceState);
+            AnnotationActivityManager.addActivity(this);
+            return;
         }
         Method[] methods = getClass().getDeclaredMethods();
         for (Method method : methods) {

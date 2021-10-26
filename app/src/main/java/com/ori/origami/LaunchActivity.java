@@ -15,9 +15,13 @@ import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
+import androidx.databinding.ViewDataBinding;
 
+import com.ori.origami.databinding.ActivityLaunchBinding;
 import com.origami.activity.OriImageActivity;
 import com.origami.activity.OriImageSelect;
+import com.origami.origami.base.AnnActivity;
 import com.origami.origami.base.AnnotationActivity;
 import com.origami.origami.base.RequestPermissionNext;
 import com.origami.origami.base.annotation.BClick;
@@ -30,19 +34,13 @@ import java.io.InputStream;
 
 @SuppressLint("NonConstantResourceId")
 @BContentView(R.layout.activity_launch)
-public class LaunchActivity extends AnnotationActivity {
+public class LaunchActivity extends AnnActivity<ActivityLaunchBinding> {
 
     NativeRtspPlay nativeRtspPlay;
 
-    @BView(R.id.mub)
-    EditText editText;
-
-    @BView(R.id.surface)
-    SurfaceView surfaceView;
-
     @Override
     public void init(@Nullable Bundle savedInstanceState) {
-        surfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
+        bViews.surface.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(@NonNull SurfaceHolder holder) {
                 nativeRtspPlay = new NativeRtspPlay();
@@ -113,14 +111,14 @@ public class LaunchActivity extends AnnotationActivity {
     }
 
     private void doB(Bitmap bitmap){
-        Editable text = editText.getText();
+        Editable text = bViews.mub.getText();
         int radius;
         if(text != null && !TextUtils.isEmpty(text.toString())){
             int val;
             try {
                 val = Integer.parseInt(text.toString());
             }catch (NumberFormatException e){
-                editText.setText(String.valueOf(50));
+                bViews.mub.setText(String.valueOf(50));
                 val = 50;
             }
             radius = val;

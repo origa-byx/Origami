@@ -9,6 +9,8 @@ import java.lang.annotation.Target;
  * @author xiao gan
  * @date 2020/12/2
  * @description: {@link android.app.Activity#findViewById(int)}
+ *
+ * @deprecated
  **/
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)

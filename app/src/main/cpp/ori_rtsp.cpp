@@ -303,7 +303,7 @@ void nativeWindowRefresh(JNIEnv * env, jobject & surface){
     //2. 设置渲染区域和输入格式
     ANativeWindow_setBuffersGeometry(m_NativeWindow, m_VideoWidth, m_VideoHeight, WINDOW_FORMAT_RGBA_8888);
 
-    //3. 渲染
+    //渲染
     ANativeWindow_Buffer m_NativeWindowBuffer;
     //锁定当前 Window ，获取屏幕缓冲区 Buffer 的指针
     ANativeWindow_lock(m_NativeWindow, &m_NativeWindowBuffer, nullptr);
@@ -319,7 +319,7 @@ void nativeWindowRefresh(JNIEnv * env, jobject & surface){
     //解锁当前 Window ，渲染缓冲区数据
     ANativeWindow_unlockAndPost(m_NativeWindow);
 
-    //4. 释放 ANativeWindow
+    //释放 ANativeWindow
     if(m_NativeWindow){
         ANativeWindow_release(m_NativeWindow);
     }

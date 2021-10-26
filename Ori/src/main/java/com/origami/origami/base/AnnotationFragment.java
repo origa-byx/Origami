@@ -38,30 +38,34 @@ public abstract class AnnotationFragment<T extends AnnotationActivity> extends F
         this.mContext = new WeakReference<>((T) context);
     }
 
+    protected void initBindView(View view){
+        Field[] fields = getClass().getDeclaredFields();
+        for (Field field : fields) {
+            BView bindMyView = field.getAnnotation(BView.class);
+            if(bindMyView != null){
+                boolean accessible = field.isAccessible();
+                try {
+                    if(field.getModifiers() != Modifier.PUBLIC && !accessible){
+                        field.setAccessible(true);
+                        field.set(this,view.findViewById(bindMyView.value()));
+                        field.setAccessible(false);
+                    }else {
+                        field.set(this,view.findViewById(bindMyView.value()));
+                    }
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         BContentView annotation = getClass().getAnnotation(BContentView.class);
         if(annotation != null){
             View view = inflater.inflate(annotation.value(), container, false);
-            Field[] fields = getClass().getDeclaredFields();
-            for (Field field : fields) {
-                BView bindMyView = field.getAnnotation(BView.class);
-                if(bindMyView != null){
-                    boolean accessible = field.isAccessible();
-                    try {
-                        if(field.getModifiers() != Modifier.PUBLIC && !accessible){
-                            field.setAccessible(true);
-                            field.set(this,view.findViewById(bindMyView.value()));
-                            field.setAccessible(false);
-                        }else {
-                            field.set(this,view.findViewById(bindMyView.value()));
-                        }
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
+            initBindView(view);
             Method[] methods = getClass().getDeclaredMethods();
             for (Method method : methods) {
                 BClick bindClickListener = method.getAnnotation(BClick.class);

@@ -279,7 +279,7 @@ public class Ori {
      * @param isRandomFile  是否生成随机文件夹防止单一文件夹类子节点过多
      * @return null ：保存失败
      */
-    public static String saveBitmapWithAppNamePath(Bitmap mBitmap, Context context , boolean isRandomFile) {
+    public static String saveBitmapWithAppNamePath(Bitmap mBitmap, Context context, boolean isRandomFile) {
         return saveBitmapWithAppNamePath(mBitmap, context, isRandomFile, Bitmap.CompressFormat.JPEG);
     }
 
@@ -413,20 +413,29 @@ public class Ori {
     /**
      * 获取输入控件的值
      * @param editText
-     * @return null ： 无值 反之 String
+     * @return def or String
      */
-    public static String getEditTextContent(EditText editText){
+    public static String getEditTextContent(EditText editText, String def){
         Editable editable = editText.getText();
         if(editable != null && !TextUtils.isEmpty(editable.toString())){
             return editable.toString();
         }
-        return null;
+        return def;
     }
 
     /**
      * 获取输入控件的值
      * @param editText
-     * @return def ： 无值 反之 int
+     * @return null ： 无值 反之 String
+     */
+    public static String getEditTextContent(EditText editText){
+        return getEditTextContent(editText, null);
+    }
+
+    /**
+     * 获取输入控件的值
+     * @param editText
+     * @return def or int
      */
     public static int getEditIntContent(EditText editText, int def){
         Integer intContent = getEditIntContent(editText);
@@ -448,6 +457,24 @@ public class Ori {
             }
         }
         return null;
+    }
+
+    /** 判断是否处于后台
+     * @param context
+     * @return true：处于后台, false：不处于后台
+     */
+    public static boolean isRunningOnBackground(Context context) {
+        ActivityManager activityManager = (ActivityManager) context
+                .getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningAppProcessInfo> appProcesses = activityManager
+                .getRunningAppProcesses();
+        if(appProcesses == null){ return false; }
+        for (ActivityManager.RunningAppProcessInfo appProcess : appProcesses) {
+            if (appProcess.processName.equals(context.getPackageName())) {
+                return appProcess.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
+            }
+        }
+        return false;
     }
 
     /**
