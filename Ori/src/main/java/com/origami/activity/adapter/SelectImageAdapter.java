@@ -1,8 +1,5 @@
 package com.origami.activity.adapter;
 
-import android.app.Activity;
-import android.content.Context;
-import android.graphics.Bitmap;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,11 +12,10 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.target.BitmapImageViewTarget;
 import com.origami.activity.OriImageActivity;
 import com.origami.activity.OriImageSelect;
 import com.origami.origami.R;
-import com.origami.origami.base.base_utils.ToastMsg;
+import com.origami.origami.base.toast.OriToast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,7 +68,7 @@ public class SelectImageAdapter extends RecyclerView.Adapter<SelectImageAdapter.
                     selectPaths.remove(path);
                     notifyDataSetChanged();
                 } else if (selectPaths.size() >= maxSelect) {
-                    ToastMsg.show_msg(String.format("最多只能选择%s张图片", maxSelect), false);
+                    OriToast.show(String.format("最多只能选择%s张图片", maxSelect), false);
                 } else {
                     selectPaths.add(path);
                     notifyItemChanged(position);

@@ -1,4 +1,4 @@
-package com.origami.origami.base;
+package com.origami.origami.base.event;
 
 
 import android.app.Activity;
@@ -7,13 +7,13 @@ import android.util.Log;
 
 import androidx.fragment.app.Fragment;
 
+import com.origami.App;
 import com.origami.utils.UiThreadUtil;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,6 +32,7 @@ public class OriEventBus {
     private final static String TAG = "OriEventBus";
 
     private final static Map<String, Set<BaseEvent>> EVENT_MAP = new ConcurrentHashMap<>();
+    private final static Map<String, Set<ObjBEvent>> objEventMap = new ConcurrentHashMap<>();
 
     public static void registerEvent(String tag, BaseEvent event){
         if(tag == null || event == null){ return; }
@@ -56,12 +57,25 @@ public class OriEventBus {
 
     public static void removeEventsByTag(String tag){
         if(tag == null){ return; }
-        EVENT_MAP.remove(tag);
+        Set<BaseEvent> remove = EVENT_MAP.remove(tag);
+        if(remove != null && !remove.isEmpty()){
+            for (BaseEvent baseEvent : remove) {
+                if(baseEvent instanceof ObjBEvent){
+                    removeObjEventMap(((ObjBEvent) baseEvent));
+                }
+            }
+        }
     }
 
     public static void removeEvent(BaseEvent event){
         if(event == null){ return; }
-        if(EVENT_MAP.get(event.tag) != null){ EVENT_MAP.get(event.tag).remove(event); }
+        Set<BaseEvent> baseEvents = EVENT_MAP.get(event.tag);
+        if(baseEvents != null){
+            baseEvents.remove(event);
+            if(event instanceof ObjBEvent){
+                removeObjEventMap(((ObjBEvent) event));
+            }
+        }
     }
 
     public static void triggerEventAndRemove(String tag, Object... args) {
@@ -70,7 +84,51 @@ public class OriEventBus {
         if(events != null){
             for (BaseEvent event : events) {
                 event.triggerEvent(args);
+                if(event instanceof ObjBEvent){
+                    removeObjEventMap(((ObjBEvent) event));
+                }
             }
+        }
+    }
+
+    public static void bindOriEvent(Object obj){
+        Set<ObjBEvent> objBEventSet = new HashSet<>();
+        for (Method method : obj.getClass().getDeclaredMethods()) {
+            BEvent bEvent = method.getAnnotation(BEvent.class);
+            if(bEvent != null){
+                ObjBEvent event = new ObjBEvent(obj, method, bEvent.runThread());
+                event.tag = bEvent.value();
+                objBEventSet.add(event);
+                registerEvent(bEvent.value(), event);
+            }
+        }
+        if(!objBEventSet.isEmpty()){
+            objEventMap.put(obj.getClass().getName(), objBEventSet);
+        }
+    }
+
+    public static void removeOriEvent(Object obj){
+        if(obj == null){
+            for (Set<ObjBEvent> value : objEventMap.values()) {
+                for (ObjBEvent objBEvent : value) {
+                    removeEvent(objBEvent);
+                }
+            }
+            objEventMap.clear();
+            return;
+        }
+        Set<ObjBEvent> objBEventSet = objEventMap.remove(obj.getClass().getName());
+        if(objBEventSet != null && !objBEventSet.isEmpty()){
+            for (ObjBEvent objBEvent : objBEventSet) {
+                removeEvent(objBEvent);
+            }
+        }
+    }
+
+    private static void removeObjEventMap(ObjBEvent event){
+        Set<ObjBEvent> objBEventSet = objEventMap.get(event.keyName);
+        if(objBEventSet != null) {
+            objBEventSet.remove(event);
         }
     }
 
@@ -83,6 +141,43 @@ public class OriEventBus {
     public static abstract class BaseEvent{
         protected String tag;
         public abstract void triggerEvent(Object... args);
+    }
+
+    private static final class ObjBEvent extends BaseEvent{
+
+        private final String keyName;
+        private final int run_on_thread;
+        private final WeakReference<Object> obj;
+        private final Method method;
+
+        public ObjBEvent(Object ob, Method method, int run_on_thread) {
+            keyName = ob.getClass().getName();
+            this.obj = new WeakReference<>(ob);
+            this.method = method;
+            this.run_on_thread = run_on_thread;
+        }
+
+        @Override
+        public void triggerEvent(Object... args) {
+            Object ob = obj.get();
+            if(ob == null){ removeEvent(this); return; }
+            switch (run_on_thread){
+                case RunThread.MAIN_UI:{
+                    UiThreadUtil.getInstance().runOnUiThread(()-> postEvent(args));
+                }break;
+                case RunThread.CURRENT:{ postEvent(args); }break;
+                case RunThread.NEW_THREAD:{ new Thread(() -> postEvent(args)).start(); }break;
+            }
+        }
+
+        private void postEvent(Object ob, Object... args){
+            try{
+                method.invoke(ob, args);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                Log.e(TAG, ob.getClass().getSimpleName() + "::" + method.getName() + "-> " + e.getMessage());
+            }
+        }
+
     }
 
     public static abstract class Event2 extends BaseEvent{
@@ -115,6 +210,7 @@ public class OriEventBus {
                 Activity oa = ob instanceof Activity ? ((Activity) ob) : null;
                 Fragment of = ob instanceof Fragment ? ((Fragment) ob) : null;
                 if((oa == null || oa.isFinishing()) && (of == null || of.isDetached())){
+                    removeEvent(this);
                     log_msg("");  return;
                 }
                 switch (run_on_thread){
@@ -124,7 +220,7 @@ public class OriEventBus {
                     case RunThread.CURRENT:{ postEvent(args); }break;
                     case RunThread.NEW_THREAD:{ new Thread(() -> postEvent(args)).start(); }break;
                 }
-            }else { log_msg(""); }
+            }else { removeEvent(this); log_msg(""); }
         }
 
         public abstract void postEvent(Object... args);
@@ -165,7 +261,7 @@ public class OriEventBus {
                 Activity oa = ob instanceof Activity ? ((Activity) ob) : null;
                 Fragment of = ob instanceof Fragment ? ((Fragment) ob) : null;
                 if((oa == null || oa.isFinishing()) && (of == null || of.isDetached())){
-                    log_msg("");  return;
+                    log_msg(""); removeEvent(this);  return;
                 }
                 switch (run_on_thread){
                     case RunThread.MAIN_UI:{
@@ -174,6 +270,7 @@ public class OriEventBus {
                         }else if(of.getActivity() != null){
                             of.getActivity().runOnUiThread(() -> postEvent(args));
                         }else {
+                            removeEvent(this);
                             log_msg("other");
                         }
                     }break;
@@ -181,7 +278,7 @@ public class OriEventBus {
                     case RunThread.CURRENT:{ postEvent(args); }break;
                     case RunThread.NEW_THREAD:{ new Thread(() -> postEvent(args)).start(); }break;
                 }
-            }else { log_msg("->weakReference get null"); }
+            }else { removeEvent(this); log_msg("->weakReference get null"); }
         }
 
         public abstract void postEvent(Object... args);

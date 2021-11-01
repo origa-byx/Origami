@@ -1,18 +1,16 @@
-package com.origami.origami.base.base_utils;
+package com.origami.origami.base.toast;
 
 
-import android.view.Gravity;
-
-import com.origami.origami.base.EventConfig;
-import com.origami.origami.base.OriEventBus;
-import com.origami.utils.Dp2px;
-import com.origami.utils.UiThreadUtil;
-import com.origami.window.GlobalWindowUtil;
+import com.origami.origami.base.event.EventConfig;
+import com.origami.origami.base.event.OriEventBus;
 
 /**
  * @by: origami
  * @date: {2021/4/29}
  * @info:
+ *
+ * @deprecated
+ * @see OriToast
  **/
 public class ToastMsg {
 
@@ -67,16 +65,6 @@ public class ToastMsg {
     public static void show_msg(String msg, Boolean boo, long time){ new ToastMsg(msg, DEF, time , boo).show(); }
 
     public void show(){
-//        if(!UiThreadUtil.isInit()){
             OriEventBus.triggerEvent(EventConfig.SHOW_TOAST,this);
-//            return;
-//        }
-
-//        GlobalWindowUtil.builder()
-//                .setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL)
-//                .setLocation(0, Dp2px.dp2px(50))
-//                .setCanTouch(false)
-//                .build()
-//                .showToast(this);
     }
 }

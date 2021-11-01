@@ -1,3 +1,4 @@
+#include <stdint.h>
 //
 // Created by Administrator on 2021-10-21.
 //
@@ -9,6 +10,10 @@
 #include <cstdlib>
 #include <fstream>
 #include <cstdio>
+//C++ 线程
+#include <thread>
+//C++ 线程同步 等待唤醒
+#include <condition_variable>
 #ifdef __cplusplus
 extern "C"
 {
@@ -28,98 +33,149 @@ extern "C"
 #define LOG_E(...) __android_log_print(ANDROID_LOG_ERROR,TAG ,__VA_ARGS__)
 #define LOG_F(...) __android_log_print(ANDROID_LOG_FATAL,TAG ,__VA_ARGS__)
 
-void yuv2rgbFrame_init();
-std::string jString2str(JNIEnv* env, jstring j_str);
-void codeVideo(const std::string & m_Url);
-void initTargetWH();
+class VideoDecode;
+std::string jString2str(JNIEnv& env, jstring j_str);
+void getVideoDecode(VideoDecode** m_video, JNIEnv& env, jobject& thiz);
+class VideoDecode{
+    private:
+        //native_window
+        ANativeWindow* m_NativeWindow = nullptr;
+        AVFormatContext* m_AVFormatContext;
+        AVCodec* m_AVCodec;
+        //解码器context
+        AVCodecContext* m_AVCodecContext;
+        AVPacket* m_Packet;
+        //Rgb帧
+        AVFrame* m_RGBAFrame;
+        //原始帧
+        AVFrame* m_Frame;
+        //yuv2rgb 转换context
+        SwsContext* m_SwsContext;
 
-//native_window
-ANativeWindow* m_NativeWindow;
-AVFormatContext* m_AVFormatContext;
-AVCodec* m_AVCodec;
-//解码器context
-AVCodecContext* m_AVCodecContext;
-AVPacket* m_Packet;
-//Rgb帧
-AVFrame* m_RGBAFrame;
-//原始帧
-AVFrame* m_Frame;
-//yuv2rgb 转换context
-SwsContext* m_SwsContext;
+        uint8_t* m_FrameBuffer;
 
-uint8_t* m_FrameBuffer;
+        int32_t m_VideoWidth, m_VideoHeight;//视频原始大小
+        int32_t m_RenderWidth, m_RenderHeight;//外部实际控件大小
 
-int32_t m_VideoWidth, m_VideoHeight;//视频原始大小
-int32_t m_RenderWidth, m_RenderHeight;//外部实际控件大小
-
-int32_t m_targetWidth, m_targetHeight;//目标转换大小
-int32_t m_offsetWidth = 0, m_offsetHeight = 0;//x, y偏移
+        int32_t m_targetWidth, m_targetHeight;//目标转换大小
+        int32_t m_offsetWidth = 0, m_offsetHeight = 0;//x, y偏移
+        void yuv2rgbFrame_init();
+        void initTargetWH();
+    public:
+        bool stop = false;
+        ~VideoDecode(){ release(); }
+        void bindNativeWindow(JNIEnv& env, jobject& surface);
+        void codeVideo(const std::string& m_Url);
+        void release();
+};
+//java层用来保存C++对象地址的指针成员变量
+jfieldID objAtJava_ptr;
 
 extern "C" {
+    //jni 的第一个加载函数
+    JNIEXPORT jint JNICALL
+    JNI_OnLoad(JavaVM* vm, void* reserved){
+        LOG_E("JNI_OnLoad 执行了");
+        if (vm == nullptr){
+            return JNI_ERR;
+        }
+
+        JNIEnv *env;
+        int32_t jni_version = JNI_ERR;
+        if(vm->GetEnv((void**)&env,JNI_VERSION_1_6) == JNI_OK){
+            jni_version = JNI_VERSION_1_6;
+        }else if(vm->GetEnv((void**)&env,JNI_VERSION_1_4) == JNI_OK){
+            jni_version = JNI_VERSION_1_4;
+        }else if(vm->GetEnv((void**)&env,JNI_VERSION_1_2) == JNI_OK){
+            jni_version = JNI_VERSION_1_2;
+        }else if(vm->GetEnv((void**)&env,JNI_VERSION_1_1) == JNI_OK){
+            jni_version = JNI_VERSION_1_1;
+        }
+        LOG_E("当前JNI版本：%d", jni_version);
+
+//        myClass = (env)->FindClass("com/safone/hostregister/jni/QrNative");
+//        global_class = (jclass)env->NewGlobalRef(myClass);
+//        mid_method_w = (env)->GetStaticMethodID(global_class,"sendSerialPortData", "([BI)V");
+        jclass jClazz = env->FindClass("com/ori/origami/NativeRtspPlay");
+        objAtJava_ptr = env->GetFieldID(jClazz, "native_obj_ptr", "J");
+        return jni_version;
+    }
 
     JNIEXPORT void JNICALL
-    Java_com_ori_origami_NativeRtspPlay_setUrl(JNIEnv *env, jobject thiz, jstring rtsp_url) {
-        codeVideo(jString2str(env, rtsp_url));
+    Java_com_ori_origami_NativeRtspPlay_setUrl(JNIEnv* env, jobject thiz, jstring rtsp_url) {
+        LOG_E("Java_com_ori_origami_NativeRtspPlay_setUrl");
+        VideoDecode* m_video;
+        getVideoDecode(&m_video, *env, thiz);
+        if(!m_video){
+            LOG_E("VideoDecode is null, no Java_com_ori_origami_NativeRtspPlay_setNativeWindow init");
+        }else{
+            m_video->codeVideo(jString2str(*env, rtsp_url));
+        }
+//        setUrl(*env, thiz, rtsp_url);
     }
 
     JNIEXPORT void JNICALL
     Java_com_ori_origami_NativeRtspPlay_setNativeWindow(JNIEnv *env, jobject thiz, jobject surface) {
-        //获取surfaceView的window
-        m_NativeWindow = ANativeWindow_fromSurface(env, surface);
-        m_RenderWidth = ANativeWindow_getWidth(m_NativeWindow);
-        m_RenderHeight = ANativeWindow_getHeight(m_NativeWindow);
-        LOG_E("width: %d", m_RenderWidth);
-        LOG_E("height: %d", m_RenderHeight);
-        //2. 设置渲染区域和输入格式
-        ANativeWindow_setBuffersGeometry(m_NativeWindow, m_RenderWidth, m_RenderHeight, WINDOW_FORMAT_RGBA_8888);
+        LOG_E("Java_com_ori_origami_NativeRtspPlay_setNativeWindow");
+        if(objAtJava_ptr){
+            auto* c_video = new VideoDecode();
+            env->SetLongField(thiz, objAtJava_ptr, reinterpret_cast<jlong>(c_video));
+            c_video->bindNativeWindow(*env, surface);
+        } else{
+            LOG_E("ERROR, objAtJava_ptr is null( at java param native_obj_ptr) ");
+        }
     }
 
     JNIEXPORT void JNICALL
     Java_com_ori_origami_NativeRtspPlay_release(JNIEnv *env, jobject thiz) {
-        avformat_network_deinit();
+        LOG_E("Java_com_ori_origami_NativeRtspPlay_release");
+        VideoDecode* m_video;
+        getVideoDecode(&m_video, *env, thiz);
+        delete m_video;
+    }
 
-        if(m_RGBAFrame != nullptr) {
-            av_frame_free(&m_RGBAFrame);
-            m_RGBAFrame = nullptr;
-        }
+    JNIEXPORT void JNICALL
+    Java_com_ori_origami_NativeRtspPlay_play(JNIEnv *env, jobject thiz){
+        VideoDecode* m_video;
+        getVideoDecode(&m_video, *env, thiz);
+        m_video->stop = true;
+    }
 
-        if(m_FrameBuffer != nullptr) {
-            free(m_FrameBuffer);
-            m_FrameBuffer = nullptr;
-        }
+    JNIEXPORT void JNICALL
+    Java_com_ori_origami_NativeRtspPlay_stop(JNIEnv *env, jobject thiz){
+        VideoDecode* m_video;
+        getVideoDecode(&m_video, *env, thiz);
+        m_video->stop = false;
+    }
 
-        if(m_SwsContext != nullptr) {
-            sws_freeContext(m_SwsContext);
-            m_SwsContext = nullptr;
-        }
-
-        if(m_Frame != nullptr) {
-            av_frame_free(&m_Frame);
-            m_Frame = nullptr;
-        }
-
-        if(m_Packet != nullptr) {
-            av_packet_free(&m_Packet);
-            m_Packet = nullptr;
-        }
-
-        if(m_AVCodecContext != nullptr) {
-            avcodec_close(m_AVCodecContext);
-            avcodec_free_context(&m_AVCodecContext);
-            m_AVCodecContext = nullptr;
-            m_AVCodec = nullptr;
-        }
-        avformat_close_input(&m_AVFormatContext);
-        avformat_free_context(m_AVFormatContext);
-        m_AVFormatContext = nullptr;
-
-        if(m_NativeWindow)
-            ANativeWindow_release(m_NativeWindow);
+    JNIEXPORT jboolean JNICALL
+    Java_com_ori_origami_NativeRtspPlay_isPlay(JNIEnv *env, jobject thiz){
+        VideoDecode* m_video;
+        getVideoDecode(&m_video, *env, thiz);
+        return m_video->stop;
     }
 }
-void codeVideo(const std::string & m_Url){
 
-    avformat_network_init();//初始化网络模块
+void getVideoDecode(VideoDecode** m_video, JNIEnv& env, jobject& thiz){
+    if(objAtJava_ptr){
+        *m_video = reinterpret_cast<VideoDecode*>(env.GetIntField(thiz, objAtJava_ptr));
+    }
+}
+
+void VideoDecode::bindNativeWindow(JNIEnv& env, jobject& surface) {
+    //获取surfaceView的window
+    m_NativeWindow = ANativeWindow_fromSurface(&env, surface);
+    m_RenderWidth = ANativeWindow_getWidth(m_NativeWindow);
+    m_RenderHeight = ANativeWindow_getHeight(m_NativeWindow);
+    LOG_E("width: %d", m_RenderWidth);
+    LOG_E("height: %d", m_RenderHeight);
+    //2. 设置渲染区域和输入格式
+    ANativeWindow_setBuffersGeometry(m_NativeWindow, m_RenderWidth, m_RenderHeight, WINDOW_FORMAT_RGBA_8888);
+}
+
+void VideoDecode::codeVideo(const std::string & m_Url){
+
+//    avformat_network_init();//初始化网络模块
 
     //1.创建封装格式上下文
     m_AVFormatContext = avformat_alloc_context();
@@ -178,11 +234,12 @@ void codeVideo(const std::string & m_Url){
     LOG_E("开始解码...");
     //10.解码循环
     while (av_read_frame(m_AVFormatContext, m_Packet) >= 0) {//读取帧
+        while (stop){ }
         if (m_Packet->stream_index == videoStreamIndex) {
             if (avcodec_send_packet(m_AVCodecContext, m_Packet) != 0) { //视频解码
                 return;
             }
-            LOG_E("---------------------单帧解码-----------------------");
+            LOG_I("---------------------单帧解码-----------------------");
             while (avcodec_receive_frame(m_AVCodecContext, m_Frame) == 0) {
                 //获取到 m_Frame 解码数据，在这里进行格式转换，然后进行渲染
                 //格式转换yuv -> rgb
@@ -196,11 +253,11 @@ void codeVideo(const std::string & m_Url){
 
                 int srcLineSize = m_RGBAFrame->linesize[0];//输入图的步长（一行像素有多少字节）
                 int dstLineSize = m_NativeWindowBuffer.stride * 4;//RGBA 缓冲区步长
-                LOG_E("srcLineSize: %d", srcLineSize);
-                LOG_E("dstLineSize: %d", dstLineSize);
+                LOG_I("srcLineSize: %d", srcLineSize);
+                LOG_I("dstLineSize: %d", dstLineSize);
                 for (int i = m_offsetHeight; i < m_targetHeight; ++i) {
                     //一行一行地拷贝图像数据
-                    memcpy(dstBuffer + i * dstLineSize + m_offsetWidth, m_FrameBuffer + i * srcLineSize, srcLineSize);
+                    memcpy(dstBuffer + i * dstLineSize + m_offsetWidth * 4, m_FrameBuffer + i * srcLineSize, srcLineSize);
                 }
                 //解锁当前 Window ，渲染缓冲区数据
                 ANativeWindow_unlockAndPost(m_NativeWindow);
@@ -209,8 +266,8 @@ void codeVideo(const std::string & m_Url){
         av_packet_unref(m_Packet); //释放 m_Packet 引用，防止内存泄漏
     }
 
-    //11.释放资源，解码完成
-    avformat_network_deinit();
+    //释放资源，解码完成
+//    avformat_network_deinit();
 
     if(m_Frame != nullptr) {
         av_frame_free(&m_Frame);
@@ -234,17 +291,17 @@ void codeVideo(const std::string & m_Url){
 
 }
 
-void yuv2rgbFrame_init(){
+void VideoDecode::yuv2rgbFrame_init(){
     //1. 分配存储 RGB 图像的 buffer
     m_VideoWidth = m_AVCodecContext->width;
     m_VideoHeight = m_AVCodecContext->height;
     initTargetWH();
-    LOG_E("m_VideoWidth: %d", m_VideoWidth);
-    LOG_E("m_VideoHeight: %d", m_VideoHeight);
-    LOG_E("m_targetWidth: %d", m_targetWidth);
-    LOG_E("m_targetHeight: %d", m_targetHeight);
-    LOG_E("m_offsetWidth: %d", m_offsetWidth);
-    LOG_E("m_offsetHeight: %d", m_offsetHeight);
+    LOG_W("m_VideoWidth: %d", m_VideoWidth);
+    LOG_W("m_VideoHeight: %d", m_VideoHeight);
+    LOG_W("m_targetWidth: %d", m_targetWidth);
+    LOG_W("m_targetHeight: %d", m_targetHeight);
+    LOG_W("m_offsetWidth: %d", m_offsetWidth);
+    LOG_W("m_offsetHeight: %d", m_offsetHeight);
     m_RGBAFrame = av_frame_alloc();
     //计算 Buffer 的大小
     int bufferSize = av_image_get_buffer_size(AV_PIX_FMT_RGBA, m_targetWidth, m_targetHeight, 1);
@@ -257,29 +314,52 @@ void yuv2rgbFrame_init(){
     m_SwsContext = sws_getContext(m_VideoWidth, m_VideoHeight, m_AVCodecContext->pix_fmt,
                                   m_targetWidth, m_targetHeight, AV_PIX_FMT_RGBA,
                                   SWS_FAST_BILINEAR, NULL, NULL, NULL);
-
-    //3. 格式转换
-//    sws_scale(m_SwsContext, yuv_frame.data, yuv_frame.linesize, 0, m_VideoHeight, m_RGBAFrame->data, m_RGBAFrame->linesize);
-
-    //4. 释放资源
-//    if(m_RGBAFrame != nullptr) {
-//        av_frame_free(&m_RGBAFrame);
-//        m_RGBAFrame = nullptr;
-//    }
-//
-//    if(m_FrameBuffer != nullptr) {
-//        free(m_FrameBuffer);
-//        m_FrameBuffer = nullptr;
-//    }
-//
-//    if(m_SwsContext != nullptr) {
-//        sws_freeContext(m_SwsContext);
-//        m_SwsContext = nullptr;
-//    }
 }
 
+void VideoDecode::release() {
+//    avformat_network_deinit();
 
-void initTargetWH(){
+    if(m_RGBAFrame != nullptr) {
+        av_frame_free(&m_RGBAFrame);
+        m_RGBAFrame = nullptr;
+    }
+
+    if(m_FrameBuffer != nullptr) {
+        free(m_FrameBuffer);
+        m_FrameBuffer = nullptr;
+    }
+
+    if(m_SwsContext != nullptr) {
+        sws_freeContext(m_SwsContext);
+        m_SwsContext = nullptr;
+    }
+
+    if(m_Frame != nullptr) {
+        av_frame_free(&m_Frame);
+        m_Frame = nullptr;
+    }
+
+    if(m_Packet != nullptr) {
+        av_packet_free(&m_Packet);
+        m_Packet = nullptr;
+    }
+
+    if(m_AVCodecContext != nullptr) {
+        avcodec_close(m_AVCodecContext);
+        avcodec_free_context(&m_AVCodecContext);
+        m_AVCodecContext = nullptr;
+        m_AVCodec = nullptr;
+    }
+    avformat_close_input(&m_AVFormatContext);
+    avformat_free_context(m_AVFormatContext);
+    m_AVFormatContext = nullptr;
+
+    //todo??释放了java层的surface也释放了??
+    if(m_NativeWindow)
+        ANativeWindow_release(m_NativeWindow);
+}
+
+void VideoDecode::initTargetWH(){
     float_t sc_w = (float_t) m_RenderWidth / (float_t) m_VideoWidth;
     float_t sc_h = (float_t) m_RenderHeight / (float_t) m_VideoHeight;
     if(sc_w <= sc_h){
@@ -295,50 +375,20 @@ void initTargetWH(){
     }
 }
 
-void nativeWindowRefresh(JNIEnv * env, jobject & surface){
-    //1. 利用 Java 层 SurfaceView 传下来的 Surface 对象，获取 ANativeWindow
-    m_NativeWindow = ANativeWindow_fromSurface(env, surface);
-    int m_VideoWidth = ANativeWindow_getWidth(m_NativeWindow);
-    int m_VideoHeight = ANativeWindow_getHeight(m_NativeWindow);
-    //2. 设置渲染区域和输入格式
-    ANativeWindow_setBuffersGeometry(m_NativeWindow, m_VideoWidth, m_VideoHeight, WINDOW_FORMAT_RGBA_8888);
-
-    //渲染
-    ANativeWindow_Buffer m_NativeWindowBuffer;
-    //锁定当前 Window ，获取屏幕缓冲区 Buffer 的指针
-    ANativeWindow_lock(m_NativeWindow, &m_NativeWindowBuffer, nullptr);
-    uint8_t *dstBuffer = static_cast<uint8_t *>(m_NativeWindowBuffer.bits);
-
-    int srcLineSize = m_RGBAFrame->linesize[0];//输入图的步长（一行像素有多少字节）
-    int dstLineSize = m_NativeWindowBuffer.stride * 4;//RGBA 缓冲区步长
-
-    for (int i = 0; i < m_VideoHeight; ++i) {
-        //一行一行地拷贝图像数据
-        memcpy(dstBuffer + i * dstLineSize, m_FrameBuffer + i * srcLineSize, srcLineSize);
-    }
-    //解锁当前 Window ，渲染缓冲区数据
-    ANativeWindow_unlockAndPost(m_NativeWindow);
-
-    //释放 ANativeWindow
-    if(m_NativeWindow){
-        ANativeWindow_release(m_NativeWindow);
-    }
-}
-
-std::string jString2str(JNIEnv* env, jstring j_str){
+std::string jString2str(JNIEnv& env, jstring j_str){
     char* rtn = nullptr;
-    jclass clsstring = env->FindClass("java/lang/String");
-    jstring strencode = env->NewStringUTF("GB2312");
-    jmethodID mid = env->GetMethodID(clsstring,   "getBytes",   "(Ljava/lang/String;)[B");
-    jbyteArray barr= (jbyteArray) env->CallObjectMethod(j_str, mid, strencode);
-    jsize alen = env->GetArrayLength(barr);
-    jbyte* ba = env->GetByteArrayElements(barr,JNI_FALSE);
+    jclass clsstring = env.FindClass("java/lang/String");
+    jstring strencode = env.NewStringUTF("GB2312");
+    jmethodID mid = env.GetMethodID(clsstring,   "getBytes",   "(Ljava/lang/String;)[B");
+    jbyteArray barr= (jbyteArray) env.CallObjectMethod(j_str, mid, strencode);
+    jsize alen = env.GetArrayLength(barr);
+    jbyte* ba = env.GetByteArrayElements(barr,JNI_FALSE);
     if(alen > 0){
         rtn = (char*) malloc(alen+1);
         memcpy(rtn,ba,alen);
         rtn[alen]=0;
     }
-    env->ReleaseByteArrayElements(barr,ba,0);
+    env.ReleaseByteArrayElements(barr,ba,0);
     std::string stemp(rtn);
     free(rtn);
     return stemp;

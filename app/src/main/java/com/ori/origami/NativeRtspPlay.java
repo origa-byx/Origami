@@ -19,9 +19,22 @@ public class NativeRtspPlay {
         System.loadLibrary("ori_rtsp");
     }
 
-    public native void setNativeWindow(Surface surface);
+    //C++ 存放类对象地址
+    private long native_obj_ptr;
+
+    public NativeRtspPlay(Surface surface) {
+        setNativeWindow(surface);
+    }
+
+    private native void setNativeWindow(Surface surface);
 
     public native void setUrl(String rtsp_url);
+
+    public native boolean isPlay();
+
+    public native void play();
+
+    public native void stop();
 
     public native void release();
 

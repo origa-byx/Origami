@@ -1,7 +1,8 @@
-package com.origami.origami.base;
+package com.origami.origami.base.act;
 
-import android.app.Activity;
 import android.os.Process;
+
+import com.origami.origami.base.act.AnnotationActivity;
 
 import java.util.LinkedList;
 import java.util.List;

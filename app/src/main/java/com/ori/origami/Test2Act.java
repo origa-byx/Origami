@@ -7,12 +7,12 @@ import android.util.Log;
 import android.view.KeyEvent;
 
 import androidx.annotation.Nullable;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.origami.origami.base.AnnotationActivity;
+import com.origami.origami.base.act.AnnotationActivity;
+import com.origami.origami.base.act.AnnotationActivityManager;
 import com.origami.origami.base.annotation.BClick;
 import com.origami.origami.base.annotation.BContentView;
-import com.origami.origami.base.base_utils.ToastMsg;
+import com.origami.origami.base.toast.ToastMsg;
 import com.origami.window.GlobalWindowUtil;
 
 import java.util.Timer;
@@ -31,7 +31,7 @@ import java.util.TimerTask;
  *          实现启动一个类似于单例的活动，返回后不销毁依然存在，
  *          可以做个返回后再原来的启动界面显示一个悬浮球之类的代表一个挂起任务，类似于QQ的视频流act返回后侧边栏的小书签
  *
- *          销毁时自己想办法  一般通过{@link com.origami.origami.base.AnnotationActivityManager} 这种act管理类来进行{@link #finish()}
+ *          销毁时自己想办法  一般通过{@link AnnotationActivityManager} 这种act管理类来进行{@link #finish()}
  **/
 @SuppressLint("NonConstantResourceId")
 @BContentView(R.layout.activity_test)

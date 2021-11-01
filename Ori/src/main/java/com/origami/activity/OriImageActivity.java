@@ -5,19 +5,16 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
 import android.widget.ImageView;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityOptionsCompat;
 
 import com.origami.origami.R;
-import com.origami.origami.base.AnnotationActivity;
-import com.origami.origami.base.OriTransfer;
-import com.origami.origami.base.base_utils.ToastMsg;
+import com.origami.origami.base.act.AnnotationActivity;
+import com.origami.origami.base.utils.OriTransfer;
+import com.origami.origami.base.toast.OriToast;
 import com.origami.view.OriImageDetailView;
-import com.origami.window.WindowUtil;
 import com.origami.window.WindowUtil2;
 
 import java.io.File;
@@ -93,12 +90,9 @@ public class OriImageActivity extends AnnotationActivity {
                     }
                     String savePath = imageView.saveBitmap(path, true);
                     if (savePath != null) {
-                        ToastMsg.show_msg("保存成功：" + savePath, 2000);
+                        OriToast.show("保存成功：" + savePath, true);
                     } else {
-                        ToastMsg toastMsg = new ToastMsg("保存失败");
-                        toastMsg.showIcon = false;
-                        toastMsg.showTime = 2500;
-                        OriImageActivity.this.showToastMsg(toastMsg);
+                        OriToast.show("保存失败", false);
                     }
                 }, true);
                 return true;

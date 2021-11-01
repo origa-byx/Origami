@@ -1,13 +1,9 @@
-package com.origami.origami.base;
+package com.origami.origami.base.utils;
 
 import android.util.Log;
 
-import androidx.annotation.IntRange;
-
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 /**
  * @by: origami

@@ -8,43 +8,46 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 
+import java.lang.reflect.InvocationTargetException;
+
 /**
  * @by: origami
  * @date: {2021-06-07}
  * @info:
+ *
  **/
 public class Db extends SQLiteOpenHelper {
 
     public static final String TAG = "Db";
 
-    public static String DB_MANE = "opendoor.db";
+    public static String DB_MANE = "ori.db";
 
     public static final String FACE_IOC = "face_ioc";
 
-    //
     private final static String CREATE_FACE_IOC = "create table if not exists face_ioc("
             + "id integer primary key autoincrement,"
-            + "time varchar(255) default \"\","                       //bid
-            + "userName varchar(255) default \"\","                           //时间戳  -- 存放去掉后三位!
+            + "time varchar(255) default \"\","
+            + "userName varchar(255) default \"\","
             + "personId varchar(255) default \"\","
             + "personName varchar(255) default \"\","
             + "sex integer default 0,"
             + "personImage varchar(255) default \"\","
             + "cardNo varchar(255) default \"\","
             + "startTime varchar(255) default \"\","
-            + "limitType integer default 0,"                       //添加方式
+            + "limitType integer default 0,"
             + "endTime varchar(255) default \"\","
             + "content text default \"\","
-            + "status integer default 0)";              //状态字段
+            + "status integer default 0)";
 
 
     private static Db DBHelper;
 
-    public static void init(Context context) {
-        DBHelper = new Db(context);
+    public static void init(Db context) {
+        if(DBHelper != null){ return; }
+        DBHelper = context;
     }
 
-    private Db(@Nullable Context context) {
+    public Db(@Nullable Context context) {
         super(context, DB_MANE, null, 1);
     }
 
@@ -58,20 +61,22 @@ public class Db extends SQLiteOpenHelper {
 //        switch (oldVersion) { }
     }
 
-    public static void doWriteSql(String sql,Object[] ...s){
+    //-----------------------------------------static-----------------------------------
+
+    public static void doWriteSql(SQLiteOpenHelper db, String sql,Object[] ...s){
         if(s.length != 0){
-            DBHelper.getWritableDatabase().execSQL(sql,s[0]);
+            db.getWritableDatabase().execSQL(sql,s[0]);
         }else {
-            DBHelper.getWritableDatabase().execSQL(sql);
+            db.getWritableDatabase().execSQL(sql);
         }
     }
 
-    public static Cursor doReadSql(String sql,String[] prams){
-        return DBHelper.getReadableDatabase().rawQuery(sql,prams);
+    public static Cursor doReadSql(SQLiteOpenHelper db, String sql,String[] prams){
+        return db.getReadableDatabase().rawQuery(sql,prams);
     }
 
-    public static void closeDb() {
-        DBHelper.getWritableDatabase().close();
+    public static void closeDb(SQLiteOpenHelper db) {
+        db.getWritableDatabase().close();
     }
 
     /**
@@ -82,7 +87,7 @@ public class Db extends SQLiteOpenHelper {
      * @param columnName 列名
      * @return true已存在，false不存在
      */
-    private boolean checkColumnExist(SQLiteDatabase db, String tableName, String columnName) {
+    public static boolean checkColumnExist(SQLiteDatabase db, String tableName, String columnName) {
         boolean result = false;
         Cursor cursor = null;
         try {

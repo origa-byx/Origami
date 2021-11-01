@@ -18,10 +18,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.origami.origami.R;
-import com.origami.origami.base.AnnotationActivity;
-import com.origami.origami.base.AnnotationActivityManager;
-import com.origami.origami.base.App;
-import com.origami.origami.base.base_utils.ToastMsg;
+import com.origami.App;
+import com.origami.origami.base.toast.ToastMsg;
 import com.origami.utils.UiThreadUtil;
 
 /**

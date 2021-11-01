@@ -2,27 +2,16 @@ package com.ori.origami;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.KeyEvent;
-import android.widget.ImageView;
 
 import androidx.annotation.Nullable;
 
-import com.origami.activity.OriImageActivity;
 import com.origami.activity.OriImageSelect;
-import com.origami.log.OriLog;
-import com.origami.log.OriLogBean;
-import com.origami.origami.base.AnnotationActivity;
+import com.origami.origami.base.act.AnnotationActivity;
 import com.origami.origami.base.annotation.BClick;
 import com.origami.origami.base.annotation.BContentView;
-import com.origami.origami.base.annotation.BView;
-import com.origami.utils.Ori;
 import com.origami.window.NotificationUtil;
 import com.origami.window.WindowUtil2;
 

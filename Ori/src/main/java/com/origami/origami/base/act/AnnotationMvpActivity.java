@@ -1,10 +1,6 @@
-package com.origami.origami.base;
+package com.origami.origami.base.act;
 
 import android.os.Bundle;
-
-import androidx.annotation.Nullable;
-
-import com.origami.origami.base.base_utils.BasePresenter;
 
 /**
  * @by: origami
@@ -18,8 +14,7 @@ public abstract class AnnotationMvpActivity<T extends BasePresenter<? extends An
     public abstract T newPresenter();
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    protected void onCreateBefore(Bundle savedInstanceState) {
         mPresenter = newPresenter();
     }
 

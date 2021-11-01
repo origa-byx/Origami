@@ -1,4 +1,4 @@
-package com.origami.origami.base;
+package com.origami.origami.base.event;
 
 /**
  * @by: origami

@@ -1,4 +1,4 @@
-package com.origami.origami.base;
+package com.origami.origami.base.act;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -15,6 +15,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
@@ -22,20 +23,18 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.databinding.DataBindingUtil;
-import androidx.databinding.ViewDataBinding;
 
 
-import com.origami.activity.OriImageSelect;
-import com.origami.log.OriLog;
-import com.origami.log.OriLogBean;
 import com.origami.origami.R;
+import com.origami.origami.base.event.EventConfig;
+import com.origami.origami.base.event.OriEventBus;
+import com.origami.origami.base.callback.RequestPermissionNext;
 import com.origami.origami.base.annotation.BClick;
 import com.origami.origami.base.annotation.BContentView;
 import com.origami.origami.base.annotation.BView;
-import com.origami.origami.base.base_utils.BasePresenter;
-import com.origami.origami.base.base_utils.ToastMsg;
-import com.origami.utils.Ori;
+import com.origami.origami.base.toast.OriToast;
+import com.origami.origami.base.toast.ToastMsg;
+import com.origami.utils.Dp2px;
 import com.origami.utils.StatusUtils;
 
 import java.lang.reflect.Field;
@@ -60,12 +59,14 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
     private final int anTime = 1000;
 
     private ValueAnimator sMsgAnimator;
+    private Toast sToast;
     private View sToastView;
-    private final OriEventBus.Event showToastEvent = new OriEventBus.Event(this, OriEventBus.RunThread.MAIN_UI) {
+    private final OriEventBus.Event2 showToastEvent = new OriEventBus.Event2(this, OriEventBus.RunThread.MAIN_UI) {
         @Override
         public void postEvent(Object... args) {
             if (args.length > 0) {
-                if (args[0] instanceof ToastMsg) { showToastMsg((ToastMsg) args[0]); }
+                if(args[0] instanceof OriToast){ showSysToastMsg(((OriToast) args[0])); }
+                else if (args[0] instanceof ToastMsg) { showToastMsg((ToastMsg) args[0]); }
                 else if (args[0] instanceof String) { showToastMsg(new ToastMsg((String) args[0])); }
             }
         }
@@ -101,6 +102,7 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
     protected void onCreate(@Nullable Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         Log.e("ORI",String.format("init -> %s", this.getClass().getSimpleName()));
+        onCreateBefore(savedInstanceState);
         BContentView contentView = getClass().getAnnotation(BContentView.class);
         if(contentView != null){
             initContentView(contentView.value());
@@ -111,6 +113,7 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
             AnnotationActivityManager.addActivity(this);
             return;
         }
+        OriEventBus.bindOriEvent(this);
         Method[] methods = getClass().getDeclaredMethods();
         for (Method method : methods) {
             BClick bindClickListener = method.getAnnotation(BClick.class);
@@ -121,12 +124,15 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
                     findViewById(i).setOnClickListener(this);
                 }
             }
+
         }
         AnnotationActivityManager.addActivity(this);
         OriEventBus.registerEvent(EventConfig.SHOW_TOAST, showToastEvent);
         setStatusBar();
         init(savedInstanceState);
     }
+
+    protected void onCreateBefore(Bundle savedInstanceState){ }
 
     @Override
     protected void onNewIntent(Intent intent) {
@@ -224,12 +230,49 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        OriEventBus.removeOriEvent(this);
         AnnotationActivityManager.removeActivity(this);
+    }
+
+    @Deprecated
+    private void showSysToastMsg(OriToast msg){
+        if(TextUtils.isEmpty(msg.msg)){ return; }
+        if(sToastView == null || sToast == null){
+            ViewGroup contView = getWindow().getDecorView().findViewById(android.R.id.content);
+            sToastView = LayoutInflater.from(this)
+                    .inflate(R.layout._base_sys_toast, contView,false);
+            ViewGroup.LayoutParams params = sToastView.getLayoutParams();
+            if(params == null){ params = new ViewGroup.LayoutParams(
+                    contView.getWidth() - Dp2px.dp2px(60),
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+            }else {
+                params.width = contView.getWidth() - Dp2px.dp2px(60);
+                params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            }
+            sToastView.setLayoutParams(params);
+        }
+        ImageView iconView = sToastView.findViewById(R.id._base_show_toast_icon);
+        if(msg.icon == null){
+            iconView.setVisibility(View.INVISIBLE);
+        }else {
+            iconView.setVisibility(View.VISIBLE);
+            if (msg.icon) {
+                iconView.setImageResource(R.mipmap._toast_ok);
+            } else {
+                iconView.setImageResource(R.mipmap._toast_no);
+            }
+        }
+        ((TextView) sToastView.findViewById(R.id._base_show_toast_msg)).setText(msg.msg);
+        if(sToast == null){ sToast = new Toast(this); sToast.setView(sToastView); }
+        sToast.setDuration(msg.shortDur? Toast.LENGTH_SHORT: Toast.LENGTH_LONG);
+        sToast.setGravity(msg.gravity, 0, msg.dy);
+        sToast.show();
     }
 
     public void showToastMsg(ToastMsg msg){
         if(TextUtils.isEmpty(msg.msg)){ return; }
-        if(sToastView == null){
+        if(sToastView == null || sToast != null){
+            sToast = null;
             ViewGroup contView = getWindow().getDecorView().findViewById(android.R.id.content);
             sToastView = LayoutInflater.from(this)
                     .inflate(R.layout._base_show_toast, contView,false);
@@ -274,12 +317,6 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
             });
         }
         if(sMsgAnimator.isRunning()){
-//            通过队列实现--> 特殊需求基本才会用到保证每条消息都被完整显示
-//            if(msg.showType == ToastMsg.DEF){//默认队列
-//
-//            }else {//抢占模式
-//
-//            }
             sMsgAnimator.cancel();
         }
         sMsgAnimator.setDuration(anTime + msg.showTime);

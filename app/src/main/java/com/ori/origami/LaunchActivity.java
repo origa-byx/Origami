@@ -9,45 +9,43 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.SurfaceHolder;
-import android.view.SurfaceView;
-import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.databinding.DataBindingUtil;
-import androidx.databinding.ViewDataBinding;
 
 import com.ori.origami.databinding.ActivityLaunchBinding;
 import com.origami.activity.OriImageActivity;
 import com.origami.activity.OriImageSelect;
-import com.origami.origami.base.AnnActivity;
-import com.origami.origami.base.AnnotationActivity;
-import com.origami.origami.base.RequestPermissionNext;
+import com.origami.origami.base.act.OriBaseActivity;
+import com.origami.origami.base.callback.RequestPermissionNext;
 import com.origami.origami.base.annotation.BClick;
 import com.origami.origami.base.annotation.BContentView;
-import com.origami.origami.base.annotation.BView;
-import com.origami.origami.base.base_utils.ToastMsg;
+import com.origami.origami.base.toast.OriToast;
+import com.origami.origami.base.toast.ToastMsg;
+import com.origami.utils.Ori;
 
-import java.io.IOException;
 import java.io.InputStream;
 
 @SuppressLint("NonConstantResourceId")
 @BContentView(R.layout.activity_launch)
-public class LaunchActivity extends AnnActivity<ActivityLaunchBinding> {
+public class LaunchActivity extends OriBaseActivity<ActivityLaunchBinding> {
 
-    NativeRtspPlay nativeRtspPlay;
+    NativeRtspPlay nativeRtspPlay, nativeRtspPlay2;
 
     @Override
     public void init(@Nullable Bundle savedInstanceState) {
-        bViews.surface.getHolder().addCallback(new SurfaceHolder.Callback() {
+
+    }
+
+    @BClick(R.id.top)
+    public void top_c(){
+        mViews.surface.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(@NonNull SurfaceHolder holder) {
-                nativeRtspPlay = new NativeRtspPlay();
-                nativeRtspPlay.setNativeWindow(holder.getSurface());
-                new Thread(() -> {
-                    nativeRtspPlay.setUrl("rtsp://admin:a1234567@192.168.0.112:554/h264/ch1/sub/av_stream");
-                }).start();
+                Log.e("ORI","surfaceCreated1");
+                open(1);
             }
 
             @Override
@@ -60,10 +58,78 @@ public class LaunchActivity extends AnnActivity<ActivityLaunchBinding> {
                 nativeRtspPlay.release();
             }
         });
+        open(1);
+    }
+    @BClick(R.id.bot)
+    public void bot_c(){
+        mViews.surface2.getHolder().addCallback(new SurfaceHolder.Callback() {
+            @Override
+            public void surfaceCreated(@NonNull SurfaceHolder holder) {
+                Log.e("ORI","surfaceCreated2");
+                open(2);
+            }
+
+            @Override
+            public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
+
+            }
+
+            @Override
+            public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
+                nativeRtspPlay2.release();
+            }
+        });
+        open(2);
+    }
+
+    public void open(int index){
+        if(index == 1){
+            if(nativeRtspPlay == null) {
+                nativeRtspPlay = new NativeRtspPlay(mViews.surface.getHolder().getSurface());
+                new Thread(() -> nativeRtspPlay.setUrl("rtsp://admin:a1234567@192.168.0.112:554/h264/ch1/sub/av_stream")).start();
+            }else {
+                nativeRtspPlay.release();
+                nativeRtspPlay = null;
+            }
+        }else {
+            if(nativeRtspPlay2 == null) {
+                nativeRtspPlay2 = new NativeRtspPlay(mViews.surface2.getHolder().getSurface());
+                new Thread(() -> nativeRtspPlay2.setUrl("http://sf1-cdn-tos.huoshanstatic.com/obj/media-fe/xgplayer_doc_video/mp4/xgplayer-demo-360p.mp4")).start();
+            }else {
+                nativeRtspPlay2.release();
+                nativeRtspPlay2 = null;
+            }
+        }
+    }
+
+
+    @BClick(R.id.surface)
+    public void cs1(){
+        if(nativeRtspPlay != null){
+            if(nativeRtspPlay.isPlay()){
+                nativeRtspPlay.stop();
+            }else {
+                nativeRtspPlay.play();
+            }
+        }
+    }
+
+    @BClick(R.id.surface2)
+    public void cs12(){
+        if(nativeRtspPlay2 != null){
+            if(nativeRtspPlay2.isPlay()){
+                nativeRtspPlay2.stop();
+            }else {
+                nativeRtspPlay2.play();
+            }
+        }
     }
 
     @BClick(R.id.cl)
     public void onClick(){
+        OriToast.show(Ori.getRandomString(1), true);
+//        ToastMsg.show_msg(Ori.getRandomString(8), true, 2000);
+        if(true){return;}
         checkPermissionAndThen(new String[]{
                 Manifest.permission.READ_EXTERNAL_STORAGE,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE}, new RequestPermissionNext() {
@@ -81,7 +147,7 @@ public class LaunchActivity extends AnnActivity<ActivityLaunchBinding> {
 
             @Override
             public void failed() {
-                ToastMsg.show_msg("拒绝了权限", false);
+                OriToast.show("拒绝了权限", false);
             }
         });
     }
@@ -111,14 +177,14 @@ public class LaunchActivity extends AnnActivity<ActivityLaunchBinding> {
     }
 
     private void doB(Bitmap bitmap){
-        Editable text = bViews.mub.getText();
+        Editable text = mViews.mub.getText();
         int radius;
         if(text != null && !TextUtils.isEmpty(text.toString())){
             int val;
             try {
                 val = Integer.parseInt(text.toString());
             }catch (NumberFormatException e){
-                bViews.mub.setText(String.valueOf(50));
+                mViews.mub.setText(String.valueOf(50));
                 val = 50;
             }
             radius = val;

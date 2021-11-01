@@ -1,6 +1,7 @@
 package com.origami.db;
 
 import android.database.Cursor;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -17,17 +18,14 @@ import java.util.List;
  **/
 public class SqlUtil<T extends DbBean> {
 
-    final String db_name;
-    final List<Field> fields;
-    final Constructor<T> constructor;
-    Field key;
+    private final SQLiteOpenHelper db;
+    private final String db_name;
+    private final List<Field> fields;
+    private final Constructor<T> constructor;
+    private Field key;
 
-    public static <S extends DbBean> SqlUtil<S> newInstance(S t) {
-        return new SqlUtil(t.getClass());
-    }
-
-    public static <S extends DbBean> SqlUtil<S> newInstance(Class<S> sClass) {
-        return new SqlUtil(sClass);
+    public static <S extends DbBean> SqlUtil<S> newInstance(SQLiteOpenHelper db, Class<S> sClass) {
+        return new SqlUtil<>(db, sClass);
     }
 
     /**
@@ -35,8 +33,8 @@ public class SqlUtil<T extends DbBean> {
      * @param
      * @return
      */
-    private SqlUtil(Class<T> aClass){
-//        Class<T> aClass = (Class<T>) obj.getClass();
+    private SqlUtil(SQLiteOpenHelper db, Class<T> aClass){
+        this.db = db;
         DbName dbName = aClass.getAnnotation(DbName.class);
         if(dbName == null || TextUtils.isEmpty(dbName.value())){ throw new RuntimeException("miss Dbname"); }
         db_name = dbName.value();
@@ -55,7 +53,7 @@ public class SqlUtil<T extends DbBean> {
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
-        if(key == null){ throw new RuntimeException("miss main key"); }
+        if(key == null){ throw new RuntimeException("not found key -- key and Item Can not be used together"); }
     }
 
     public List<T> selectDataBase(){
@@ -112,7 +110,7 @@ public class SqlUtil<T extends DbBean> {
             args[i] = obj_args.get(i);
         }
         Log.e("SQL","selectDataBase:\n" + sql.toString());
-        Cursor cursor = Db.doReadSql(sql.toString(), args);
+        Cursor cursor = Db.doReadSql(db, sql.toString(), args);
         List<T> faceDates = new ArrayList<>();
         while (cursor.moveToNext()){
             T bean = null;
@@ -160,7 +158,7 @@ public class SqlUtil<T extends DbBean> {
 
     public void deleteDateBaseByKey(String key, int id){
         String sql = "DELETE FROM " + db_name + " WHERE " + key + "=" + id;
-        Db.doWriteSql(sql);
+        Db.doWriteSql(db, sql);
     }
 
     public void deleteDataBase(T data){
@@ -193,7 +191,7 @@ public class SqlUtil<T extends DbBean> {
             args[i] = obj_args.get(i);
         }
         Log.e("SQL","deleteDataBase:\n" + sql.toString());
-        Db.doWriteSql(sql.toString(), args);
+        Db.doWriteSql(db, sql.toString(), args);
     }
 
     public void saveDataBase(T data) {
@@ -225,9 +223,9 @@ public class SqlUtil<T extends DbBean> {
         for (int i = 0; i < obj_args.size(); i++) {
             args[i] = obj_args.get(i);
         }
-        Db.doWriteSql(sql.toString(), args);
+        Db.doWriteSql(db, sql.toString(), args);
         String sqlId = "SELECT last_insert_rowid() FROM " + db_name;
-        Cursor cursor = Db.doReadSql(sqlId, null);
+        Cursor cursor = Db.doReadSql(db, sqlId, null);
         if(cursor.moveToFirst()){
             try {
                 key.set(data, cursor.getInt(0));
@@ -238,7 +236,7 @@ public class SqlUtil<T extends DbBean> {
     }
 
     /**
-     * 更新一条数据,根据 personId 定位数据
+     * 更新一条数据,根据 where 定位数据
      * @param data
      */
     public void updateDataBase(T data, String[] where, Object... args){
@@ -278,7 +276,7 @@ public class SqlUtil<T extends DbBean> {
             }
         }
         Log.e("SQL","updateDataBase:\n" + sql.toString());
-        Db.doWriteSql(sql.toString(), sql_args);
+        Db.doWriteSql(db, sql.toString(), sql_args);
     }
 
 
@@ -314,7 +312,7 @@ public class SqlUtil<T extends DbBean> {
                 e.printStackTrace();
             }
         }
-        Cursor cursor = Db.doReadSql(sql.toString(), null);
+        Cursor cursor = Db.doReadSql(db, sql.toString(), null);
         int c = 0;
         if(cursor.moveToFirst()){
             c = cursor.getInt(0);
@@ -362,7 +360,7 @@ public class SqlUtil<T extends DbBean> {
             }
         }
         Log.e("SQL","checkHasBean:\n" + sql.toString());
-        Cursor cursor = Db.doReadSql(sql.toString(), null);
+        Cursor cursor = Db.doReadSql(db, sql.toString(), null);
         boolean b = cursor.moveToNext();
         cursor.close();
         return b;

@@ -9,7 +9,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
-import android.nfc.Tag;
 import android.os.Build;
 import android.os.IBinder;
 import android.text.TextUtils;
@@ -24,7 +23,7 @@ import com.lzy.okgo.callback.FileCallback;
 import com.lzy.okgo.model.Progress;
 import com.lzy.okgo.model.Response;
 import com.origami.origami.R;
-import com.origami.origami.base.App;
+import com.origami.App;
 import com.origami.utils.Ori;
 import com.origami.window.NotificationChannelUtil;
 
@@ -40,11 +39,12 @@ import okhttp3.OkHttpClient;
  * 继承此类  并在 清单文件 中注册 Service
  *    启动服务时 eg：
  *         Intent intent = new Intent({@link Context}, @{@link Class<? extends AppUpdate_service>});
- *         intent.putExtra("url", "your down_url");
+ *         intent.putExtra({@link #PARAM_URL}, "your download_url");
  *         startService(intent);
  **/
 public abstract class AppUpdate_service extends Service {
 
+    public static final String PARAM_URL = "param_url";
     private static final String TAG = "AppUpdate_service";
 
     /**
@@ -120,9 +120,9 @@ public abstract class AppUpdate_service extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if(intent != null){ downUrl = intent.getStringExtra("url"); }else { stopSelf(); }
+        if(intent != null){ downUrl = intent.getStringExtra(PARAM_URL); }else { stopSelf(); }
         if(TextUtils.isEmpty(downUrl)){
-            Ori.e(TAG, new Exception("缺失下载地址参数-> url"));
+            Ori.e(TAG, new Exception("缺失下载地址参数-> " + PARAM_URL));
             stopSelf();
             return super.onStartCommand(intent, flags, startId);
         }

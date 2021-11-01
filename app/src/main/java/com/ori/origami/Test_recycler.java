@@ -10,19 +10,16 @@ import android.view.ViewGroup;
 import android.view.animation.Interpolator;
 import android.widget.OverScroller;
 import android.widget.TextView;
-import android.widget.ViewFlipper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.origami.origami.base.AnnotationActivity;
+import com.origami.origami.base.act.AnnotationActivity;
 import com.origami.origami.base.annotation.BContentView;
 import com.origami.origami.base.annotation.BView;
 import com.origami.utils.Dp2px;
 import com.origami.utils.StatusUtils;
-import com.origami.view.OriRecyclerView;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -32,10 +29,6 @@ import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import lecho.lib.hellocharts.formatter.AxisValueFormatter;
-import lecho.lib.hellocharts.formatter.SimpleAxisValueFormatter;
-import lecho.lib.hellocharts.gesture.ContainerScrollType;
-import lecho.lib.hellocharts.gesture.ZoomType;
 import lecho.lib.hellocharts.model.Axis;
 import lecho.lib.hellocharts.model.AxisValue;
 import lecho.lib.hellocharts.model.Line;

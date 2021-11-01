@@ -1,4 +1,4 @@
-package com.origami.origami.base;
+package com.origami.origami.base.frgment;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -9,9 +9,10 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 
+import com.origami.origami.base.callback.RequestPermissionNext;
+import com.origami.origami.base.act.AnnotationActivity;
 import com.origami.origami.base.annotation.BClick;
 import com.origami.origami.base.annotation.BContentView;
 import com.origami.origami.base.annotation.BView;
@@ -30,12 +31,16 @@ import java.lang.reflect.Modifier;
 public abstract class AnnotationFragment<T extends AnnotationActivity> extends Fragment implements View.OnClickListener {
 
     protected final SparseArray<Method> methodSparseArray = new SparseArray<>();
-    protected WeakReference<T> mContext;
+    protected WeakReference<T> mAct;
 
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-        this.mContext = new WeakReference<>((T) context);
+        this.mAct = new WeakReference<>((T) context);
+    }
+
+    protected T getAct(){
+        return mAct.get();
     }
 
     protected void initBindView(View view){
@@ -89,14 +94,14 @@ public abstract class AnnotationFragment<T extends AnnotationActivity> extends F
 
 
     public void checkPermissionAndThen(String[] permissions, RequestPermissionNext permissionNext){
-        T t = mContext.get();
+        T t = mAct.get();
         if(t != null){ t.checkPermissionAndThen(permissions, permissionNext); }
     }
 
     @Override
     public void onDetach() {
         super.onDetach();
-        mContext = null;
+        mAct = null;
     }
 
 

@@ -1,7 +1,7 @@
-package com.origami.origami.base.base_utils;
+package com.origami.origami.base.act;
 
 
-import com.origami.origami.base.AnnotationActivity;
+import com.origami.origami.base.act.AnnotationActivity;
 
 import java.lang.ref.WeakReference;
 

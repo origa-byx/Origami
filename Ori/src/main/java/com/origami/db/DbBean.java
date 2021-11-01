@@ -4,6 +4,10 @@ package com.origami.db;
  * @by: origami
  * @date: {2021-09-28}
  * @info:   DB
+ *
+ * @see DbName
+ * @see Key
+ * @see Item
  **/
 public interface DbBean {
 

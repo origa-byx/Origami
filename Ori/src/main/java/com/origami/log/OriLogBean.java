@@ -25,7 +25,8 @@ public class OriLogBean {
             "body{padding:20px}" +
             "div{color:#000000;text-shadow: 1px 1px 5px #ffffff;border-radius:5px;word-break:break-all}" +
             "img {width: 30%;height: auto;float:left;z-index:-1;margin-right:5px}" +
-            ".init{background-color:#fdfdfd;width:100%;float:left;padding:5px 50px;margin-bottom:3px;box-sizing: border-box; }" +
+            ".init{background-color:#fdfdfd;width:98%;float:left;padding:30px 0px;margin-top:30px;" +
+                "margin-bottom:3px;box-sizing:border-box;text-align:center;border:5px dashed #2d85f0;border-radius:5px;}" +
             ".d{background-color:#eeeeee}" +
             ".v{background-color:#0aa858}" +
             ".e{background-color:#f4433c;}" +
@@ -55,7 +56,7 @@ public class OriLogBean {
 
     private OriLogBean(String tag, String level, String msg, Throwable throwable, Bitmap... bitmap) {
         this.level = level;
-        this.txt = toSafeString(msg + getBitmapLogString(bitmap));
+        this.txt = toSafeString(msg) + getBitmapLogString(bitmap);
         this.msg = msg;
         this.tag = tag == null? "NULL": tag;
         this.throwable = throwable;
@@ -68,7 +69,7 @@ public class OriLogBean {
         return msg;
     }
 
-    public static OriLogBean i(String msg){
+    protected static OriLogBean i(String msg){
         return new OriLogBean(msg);
     }
     public static OriLogBean d(@NonNull String tag, @NonNull String msg, Bitmap... bitmaps){

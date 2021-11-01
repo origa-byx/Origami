@@ -5,8 +5,6 @@ import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.origami.origami.base.App;
-import com.origami.service.AppUpdate_service;
 import com.origami.utils.Ori;
 
 import java.io.File;
@@ -44,9 +42,9 @@ public class OriLog implements Runnable {
      * @param buildConfig_DEBUG     BuildConfig.DEBUG
      */
     public static void init(Context context, boolean buildConfig_DEBUG){
-        if(instance == null){ instance = new OriLog(context, buildConfig_DEBUG); }
+        if(instance == null){ instance = new OriLog(context, buildConfig_DEBUG); }else { return; }
         new Thread(instance).start();
-        instance.log_print(OriLogBean.i(OriLogBean.dateFormat.format(new Date())));
+        instance.log_print(OriLogBean.i("日志模块初始化：" + OriLogBean.dateFormat.format(new Date())));
     }
     public synchronized static OriLog getInstance(){
         if(instance == null){ throw new RuntimeException("you must be init<OriLog> at first"); }
