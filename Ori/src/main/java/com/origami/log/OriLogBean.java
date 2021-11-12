@@ -109,12 +109,15 @@ public class OriLogBean {
         StringBuilder placeString = new StringBuilder(txt);
         if(throwable != null){
             StackTraceElement[] stackTrace = throwable.getStackTrace();
-            if(stackTrace.length > 0 && stackTrace[0] != null){
-                placeString.append(String.format("<font color=\"#3b50ce\">(%s&lt;%s&gt;:%s)</font>"
-                        ,stackTrace[0].getClassName()
-                        ,stackTrace[0].getMethodName()
-                        ,stackTrace[0].getLineNumber()
-                ));
+            if(stackTrace != null && stackTrace.length > 0){
+                for (StackTraceElement traceElement : stackTrace) {
+                    if(traceElement == null){ continue; }
+                    placeString.append(String.format("</br><font color=\"#3b50ce\">(%s&lt;%s&gt;:%s)</font>"
+                            ,traceElement.getClassName()
+                            ,traceElement.getMethodName()
+                            ,traceElement.getLineNumber()
+                    ));
+                }
             }
         }
         return String.format(

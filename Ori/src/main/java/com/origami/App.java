@@ -1,7 +1,14 @@
 package com.origami;
 
+import android.app.Activity;
 import android.app.Application;
+import android.content.ComponentCallbacks;
 import android.content.Context;
+import android.content.res.Configuration;
+import android.os.Bundle;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.origami.log.OriLog;
 import com.origami.origami.BuildConfig;

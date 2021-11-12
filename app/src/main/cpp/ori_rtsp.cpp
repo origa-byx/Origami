@@ -234,6 +234,7 @@ void VideoDecode::codeVideo(const std::string & m_Url){
     LOG_E("开始解码...");
     //10.解码循环
     while (av_read_frame(m_AVFormatContext, m_Packet) >= 0) {//读取帧
+        //todo 播放暂停改线程阻塞 非自旋
         while (stop){ }
         if (m_Packet->stream_index == videoStreamIndex) {
             if (avcodec_send_packet(m_AVCodecContext, m_Packet) != 0) { //视频解码
