@@ -129,7 +129,7 @@ public class LaunchActivity extends OriBaseActivity<ActivityLaunchBinding> {
     public void onClick(){
         OriToast.show(Ori.getRandomString(1), true);
 //        ToastMsg.show_msg(Ori.getRandomString(8), true, 2000);
-        if(true){return;}
+//        if(true){return;}
         checkPermissionAndThen(new String[]{
                 Manifest.permission.READ_EXTERNAL_STORAGE,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE}, new RequestPermissionNext() {

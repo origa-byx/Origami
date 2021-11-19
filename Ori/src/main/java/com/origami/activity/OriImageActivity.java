@@ -4,12 +4,22 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.widget.ImageView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityOptionsCompat;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestFutureTarget;
+import com.bumptech.glide.request.target.AppWidgetTarget;
+import com.bumptech.glide.request.target.BitmapImageViewTarget;
+import com.bumptech.glide.request.target.CustomViewTarget;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.target.Target;
+import com.bumptech.glide.request.transition.Transition;
 import com.origami.origami.R;
 import com.origami.origami.base.act.AnnotationActivity;
 import com.origami.origami.base.utils.OriTransfer;
@@ -47,14 +57,14 @@ public class OriImageActivity extends AnnotationActivity {
      * 启动带转场动画
      * @param activity
      * @param view      目标view ：一般为点击的imageView
-     * @param bitmap    路径 或者 bitmap
+     * @param bitmapOrPath    路径 或者 bitmap
      */
-    public static void startThisAct(Activity activity, final Object bitmap, boolean canSave, ImageView view){
+    public static void startThisAct(Activity activity,final Object bitmapOrPath, boolean canSave, ImageView view){
         Intent intent = new Intent(activity, OriImageActivity.class);
         OriTransfer.registerTransfer("ori_getBitmap", new OriTransfer.Transfer<Object>(OriTransfer.Simple) {
             @Override
             public Object getT() {
-                return bitmap;
+                return bitmapOrPath;
             }
         });
         intent.putExtra("saveFlag", canSave);
@@ -68,6 +78,25 @@ public class OriImageActivity extends AnnotationActivity {
         return R.layout.activity_ori_image;
     }
 
+    /**
+     *
+     * CustomViewTarget<OriImageDetailView, Bitmap> customViewTarget = new CustomViewTarget<OriImageDetailView, Bitmap>(imageView) {
+     *
+     *                 @Override
+     *                 public void onLoadFailed(@Nullable Drawable errorDrawable) {
+     *                 }
+     *
+     *                 @Override
+     *                 public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+     *
+     *                 }
+     *
+     *                 @Override
+     *                 protected void onResourceCleared(@Nullable Drawable placeholder) {
+     *                 }
+     *             };
+     * @param savedInstanceState
+     */
     @Override
     public void init(@Nullable Bundle savedInstanceState) {
         imageView = findViewById(R.id.ori_image);
@@ -76,9 +105,14 @@ public class OriImageActivity extends AnnotationActivity {
         if(bitmap instanceof  Bitmap){
             imageView.setImageBitmap((Bitmap) bitmap);
         }else {
-            imageView.setImageBitmap(BitmapFactory.decodeFile((String) bitmap));
+            Glide.with(this).asBitmap().load((String) bitmap).into(new SimpleTarget<Bitmap>() {
+                @Override
+                public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                    imageView.setImageBitmap(resource);
+                }
+            });
         }
-        if(!save) {
+        if(save) {
             imageView.setOnLongClickListener(v -> {
                 WindowUtil2.showSelect(OriImageActivity.this, new String[]{"保存"}, (txt, index) -> {
                     int labelRes = getApplication().getApplicationInfo().labelRes;

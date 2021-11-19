@@ -47,6 +47,7 @@ public class WindowUtil2 {
 
     int p_x = 0, p_y = 0;
     float p_dark = 0;
+    int valS = 0;
 
     private final int showAnimatorTY = Dp2px.dp2px(100);
 
@@ -78,7 +79,7 @@ public class WindowUtil2 {
                 paramsWindow.type = WindowManager.LayoutParams.TYPE_PHONE;
             }
         }else {
-            paramsWindow.type = WindowManager.LayoutParams.LAST_APPLICATION_WINDOW;
+            paramsWindow.type = WindowManager.LayoutParams.TYPE_APPLICATION;
         }
         paramsWindow.gravity = Gravity.CENTER;
         paramsWindow.dimAmount = p_dark;
@@ -135,6 +136,10 @@ public class WindowUtil2 {
         return this;
     }
 
+    public void setIsBottomMir(boolean f) {
+        this.valS = f ? -1 : 1;
+    }
+
     /**
      * 看 {@link #bindView(int, int, int)}
      * @return
@@ -187,10 +192,10 @@ public class WindowUtil2 {
     }
 
 
-    public WindowUtil2 setLocation(int gravity, int x, int y){
+    public WindowUtil2 setLocation(int gravity, int x, int y, boolean gravityIsYBottom, boolean gravityIsXEnd){
         paramsWindow.gravity = gravity;
-        p_x = paramsWindow.x = x;
-        p_y = paramsWindow.y = y;
+        p_x = paramsWindow.x = gravityIsXEnd? -x : x;
+        p_y = paramsWindow.y = gravityIsYBottom? -y : y;
         return this;
     }
 
@@ -261,6 +266,9 @@ public class WindowUtil2 {
         window.addView(bindView, paramsWindow);
         keyBack();
         showFlag = true;
+        if(valS == 0){
+            int valS = paramsWindow.gravity == Gravity.BOTTOM? -1 : 1;
+        }
         if(showAnimator == null){
             showAnimator = ValueAnimator.ofFloat(0,1f);
             showAnimator.setDuration(400);
@@ -269,7 +277,7 @@ public class WindowUtil2 {
                 float value = (float) animation.getAnimatedValue();
                 bindView.setAlpha(value);
                 paramsWindow.dimAmount = p_dark * value;
-                paramsWindow.y = p_y + (int) (showAnimatorTY * (1f - value));
+                paramsWindow.y = p_y + ((int) (showAnimatorTY * (1f - value)) * valS);
                 updateWindow();
             });
         }
@@ -344,7 +352,7 @@ public class WindowUtil2 {
         WindowUtil2 windowUtil = WindowUtil2
                 .build(activity)
                 .bindView(selectView)
-                .setLocation(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0)
+                .setLocation(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0, true, false)
                 .setBackDark(0.6f)
                 .setCanCancel();
         View.OnClickListener listener = v -> {
@@ -424,7 +432,7 @@ public class WindowUtil2 {
         textView.setText(msg);
         WindowUtil2 windowUtil2 = WindowUtil2.build(activity)
                 .bindView(makeSureView)
-                .setLocation(Gravity.CENTER, 0, 0)
+                .setLocation(Gravity.CENTER, 0, 0, false, false)
                 .setBackDark(backDart)
                 .setCanCancel();
         View.OnClickListener listener = v -> {

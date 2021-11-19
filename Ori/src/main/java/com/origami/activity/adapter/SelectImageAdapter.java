@@ -53,35 +53,30 @@ public class SelectImageAdapter extends RecyclerView.Adapter<SelectImageAdapter.
         if(!canPre && maxSelect <= 1){
             viewHolder.textView.setVisibility(View.GONE);
         }
-        View.OnClickListener listener = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                int position = viewHolder.getAdapterPosition();
-                String path = dates.get(position);
-                Log.e("SELECT","path->" + path);
-                if(!canPre && maxSelect <= 1){
-                    selectPaths.add(path);
-                    context.selectOk();
-                    return;
-                }
-                if (selectPaths.contains(path)) {
-                    selectPaths.remove(path);
-                    notifyDataSetChanged();
-                } else if (selectPaths.size() >= maxSelect) {
-                    OriToast.show(String.format("最多只能选择%s张图片", maxSelect), false);
-                } else {
-                    selectPaths.add(path);
-                    notifyItemChanged(position);
-                }
+        View.OnClickListener listener = v -> {
+            int position = viewHolder.getAdapterPosition();
+            String path = dates.get(position);
+            Log.e("SELECT","path->" + path);
+            if(!canPre && maxSelect <= 1){
+                selectPaths.add(path);
+                context.selectOk();
+                return;
+            }
+            if (selectPaths.contains(path)) {
+                selectPaths.remove(path);
+                notifyDataSetChanged();
+            } else if (selectPaths.size() >= maxSelect) {
+                OriToast.show(String.format("最多只能选择%s张图片", maxSelect), false);
+            } else {
+                selectPaths.add(path);
+                notifyItemChanged(position);
             }
         };
         if(canPre) {
-            viewHolder.imageView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    OriImageActivity.startThisAct(context, dates.get(viewHolder.getAdapterPosition()), false, viewHolder.imageView);
-                }
-            });
+            viewHolder.imageView.setOnClickListener(v -> OriImageActivity.startThisAct(context,
+                    dates.get(viewHolder.getAdapterPosition()),
+                    false,
+                    viewHolder.imageView));
             viewHolder.textView.setOnClickListener(listener);
         }else {
             viewHolder.imageView.setOnClickListener(listener);

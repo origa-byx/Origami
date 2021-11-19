@@ -26,6 +26,7 @@ import androidx.annotation.AttrRes;
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 
+import com.origami.App;
 import com.origami.log.OriLog;
 import com.origami.log.OriLogBean;
 import com.origami.origami.R;

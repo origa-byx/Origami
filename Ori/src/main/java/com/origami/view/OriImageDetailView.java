@@ -8,6 +8,7 @@ import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Point;
 import android.os.Environment;
+import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.SparseArray;
@@ -96,15 +97,17 @@ public class OriImageDetailView extends View {
                         (int) event.getX(index),
                         (int) event.getY(index) ));
                 if(mLongClickListener != null && getHandler() != null) {
-                    getHandler().postDelayed(() -> {
+                    Message obtain = Message.obtain(getHandler(), () -> {
                         if (simPoint) {
                             canMove = false;
                             simPoint = false;// 这里是为了防止单击和长按一起触发了
 //                            UiThreadUtil.getInstance().runOnUiThread(()->{
-                                mLongClickListener.onLongClick(OriImageDetailView.this);
+                            mLongClickListener.onLongClick(OriImageDetailView.this);
 //                            });
                         }
-                    },handler_taken, 1200);
+                    });
+                    obtain.obj = handler_taken;
+                    getHandler().sendMessageDelayed(obtain, 1200);
                 }
                 return true;
             case MotionEvent.ACTION_MOVE:

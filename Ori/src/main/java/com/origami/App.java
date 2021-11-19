@@ -1,19 +1,10 @@
 package com.origami;
 
-import android.app.Activity;
 import android.app.Application;
-import android.content.ComponentCallbacks;
 import android.content.Context;
-import android.content.res.Configuration;
-import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.origami.log.OriLog;
 import com.origami.origami.BuildConfig;
-import com.origami.utils.BaseErrorHandler;
-import com.origami.utils.UiThreadUtil;
 
 /**
  * @by: origami
@@ -49,8 +40,6 @@ public class App extends Application {
         super.onCreate();
         APP_ID = getApplicationInfo().packageName;
         appContext = this;
-        //主线程消息事件循环
-        UiThreadUtil.init(this);
         //本地日志
         OriLog.init(this, BuildConfig.DEBUG);
     }

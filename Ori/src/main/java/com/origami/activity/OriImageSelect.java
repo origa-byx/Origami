@@ -33,6 +33,7 @@ import com.origami.activity.adapter.SelectImageAdapter;
 import com.origami.activity.adapter.SelectPlaceAdapter;
 import com.origami.origami.R;
 import com.origami.origami.base.act.AnnotationActivity;
+import com.origami.origami.base.utils.OriTransfer;
 import com.origami.utils.Dp2px;
 import com.origami.utils.Ori;
 import com.origami.utils.ProviderImageUtils;
@@ -65,7 +66,7 @@ public class OriImageSelect extends AnnotationActivity implements TouchHandler {
 
     public static Builder builder(){ return new Builder(); }
 
-    public static class Builder implements Serializable {
+    public static class Builder {
         Set<String> supportType = new HashSet<>();
         //默认选一张
         int selectNum = 1;
@@ -169,13 +170,23 @@ public class OriImageSelect extends AnnotationActivity implements TouchHandler {
             supportType.add("image/png");
 //            supportType.add("image/webp");
             Intent intent = new Intent(activity, OriImageSelect.class);
-            intent.putExtra("builder", this);
+            OriTransfer.registerTransfer("oriImageSelect", new OriTransfer.Transfer<Builder>(OriTransfer.Simple) {
+                @Override
+                public Builder getT() {
+                    return Builder.this;
+                }
+            });
             activity.startActivityForResult(intent, requestCode);
         }
 
         public void buildWithNotInitSupportJpegAndPng(Activity activity){
             Intent intent = new Intent(activity, OriImageSelect.class);
-            intent.putExtra("builder", this);
+            OriTransfer.registerTransfer("oriImageSelect", new OriTransfer.Transfer<Builder>(OriTransfer.Simple) {
+                @Override
+                public Builder getT() {
+                    return Builder.this;
+                }
+            });
             activity.startActivityForResult(intent, requestCode);
         }
     }
@@ -197,7 +208,7 @@ public class OriImageSelect extends AnnotationActivity implements TouchHandler {
 
     @Override
     public void init(@Nullable Bundle savedInstanceState) {
-        getDisplay().getSize(screenP);
+        getWindowManager().getDefaultDisplay().getSize(screenP);
         bindViewAndEvent();
         initRecyclerView();
         animation.setDuration(800);
@@ -374,9 +385,7 @@ public class OriImageSelect extends AnnotationActivity implements TouchHandler {
     @Override
     protected void setStatusBar() {
         super.setStatusBar();
-        Intent intent = getIntent();
-        if(intent == null){ finish(); return; }
-        builder = ((Builder) intent.getSerializableExtra("builder"));
+        builder = OriTransfer.getTransferValue("oriImageSelect");
         if(builder == null){ finish(); return; }
         View contentView = this.getWindow().getDecorView()
                 .findViewById(android.R.id.content);

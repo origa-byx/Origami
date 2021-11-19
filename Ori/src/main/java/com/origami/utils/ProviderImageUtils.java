@@ -52,7 +52,8 @@ public class ProviderImageUtils {
         map.put("",list);
         resultData.keys.add("");
         while (cursor.moveToNext()){
-            String path = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
+            int columnIndex = cursor.getColumnIndex(MediaStore.Images.Media.DATA);
+            String path = cursor.getString(columnIndex);
             list.add(path);
             String name = Objects.requireNonNull(new File(path).getParentFile()).getName();
             if(!map.containsKey(name)){
@@ -80,7 +81,8 @@ public class ProviderImageUtils {
         );
         List<String> list = new ArrayList<>();
         while (cursor.moveToNext()){
-            String path = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
+            int columnIndex = cursor.getColumnIndex(MediaStore.Images.Media.DATA);
+            String path = cursor.getString(columnIndex);
             list.add(path);
         }
         cursor.close();

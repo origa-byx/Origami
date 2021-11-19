@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 
 import androidx.annotation.NonNull;
@@ -15,18 +16,14 @@ import androidx.annotation.NonNull;
  * @info:
  **/
 public class UiThreadUtil {
-    public synchronized static void init(Application context){
-        if(instance == null){ instance = new UiThreadUtil(context); }
-    }
-    public static boolean isInit(){ return instance != null; }
     public synchronized static UiThreadUtil getInstance(){
-        if(instance == null){ throw new RuntimeException("you must invoke init method at first"); }
+        if(instance == null){ instance = new UiThreadUtil(); }
         return instance;
     }
     private static UiThreadUtil instance;
     private final Handler uiHandler;
-    private UiThreadUtil(Context context){
-        uiHandler = new Handler(context.getMainLooper()){
+    private UiThreadUtil(){
+        uiHandler = new Handler(Looper.getMainLooper()){
             @Override
             public void handleMessage(@NonNull Message msg) {
                 if(msg.obj instanceof Runnable){ ((Runnable) msg.obj).run(); }
