@@ -11,6 +11,8 @@ import java.lang.annotation.Target;
  * @description: {@link android.app.Activity#findViewById(int)}
  *
  * @deprecated
+ * @see com.origami.origami.base.act.OriBaseActivity
+ * @see androidx.databinding.ViewDataBinding
  **/
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)

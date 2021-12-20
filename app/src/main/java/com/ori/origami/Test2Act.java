@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.KeyEvent;
 
 import androidx.annotation.Nullable;
@@ -12,8 +13,7 @@ import com.origami.origami.base.act.AnnotationActivity;
 import com.origami.origami.base.act.AnnotationActivityManager;
 import com.origami.origami.base.annotation.BClick;
 import com.origami.origami.base.annotation.BContentView;
-import com.origami.origami.base.toast.ToastMsg;
-import com.origami.window.GlobalWindowUtil;
+import com.origami.origami.base.toast.OriToast;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -47,9 +47,9 @@ public class Test2Act extends AnnotationActivity {
                 Log.e("ORI", "Test2Act: 我还活着-: " + ((System.currentTimeMillis() % 2) == 0?"=3=":"^v^"));
             }
         },1000,2000);
-        GlobalWindowUtil.builder()
-                .setCanTouch(false)
-                .build().showToast(new ToastMsg("开始了开始了"));
+//        GlobalWindowUtil.builder()
+//                .setCanTouch(false)
+//                .build().showToast(new ToastMsg("开始了开始了"));
     }
 
     @Override
@@ -58,7 +58,7 @@ public class Test2Act extends AnnotationActivity {
             Log.e("ORI","Test2Act: 返回");
 //            moveTaskToBack(true);
 //            return true;
-
+            OriToast.show("返回", true, true, Gravity.BOTTOM);
             Intent intent = new Intent(this, TestActivity.class);
             startActivity(intent);
 

@@ -5,6 +5,7 @@ import android.content.Context;
 
 import com.origami.log.OriLog;
 import com.origami.origami.BuildConfig;
+import com.origami.origami.base.toast.OriToast;
 
 /**
  * @by: origami
@@ -42,6 +43,7 @@ public class App extends Application {
         appContext = this;
         //本地日志
         OriLog.init(this, BuildConfig.DEBUG);
+        OriToast.init(this);
     }
 
 }

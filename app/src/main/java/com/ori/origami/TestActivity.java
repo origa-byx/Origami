@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 
 import androidx.annotation.Nullable;
 
@@ -12,8 +13,9 @@ import com.origami.activity.OriImageSelect;
 import com.origami.origami.base.act.AnnotationActivity;
 import com.origami.origami.base.annotation.BClick;
 import com.origami.origami.base.annotation.BContentView;
+import com.origami.origami.base.toast.OriToast;
 import com.origami.window.NotificationUtil;
-import com.origami.window.WindowUtil2;
+import com.origami.window.WindowUtil;
 
 
 @SuppressLint("NonConstantResourceId")
@@ -53,11 +55,12 @@ public class TestActivity extends AnnotationActivity {
     @SuppressWarnings("unused")
     @BClick(R.id.uii)
     public void onClick_jni(){
-        WindowUtil2.showMakeSure(this, "确认要启动这个活动吗？？？",
-                new String[]{"确认", "取消"}, new WindowUtil2.OnSelectListener() {
+        WindowUtil.showMakeSure(this, "确认要启动这个活动吗？？？",
+                new String[]{"确认", "取消"}, new WindowUtil.OnSelectListener() {
             @Override
             public void onSelect(String txt, int index) {
                 if(index == 0){
+                    OriToast.show("我就测试一下能不能成功我就测试一下能不能成功",true, false, Gravity.TOP);
                     Intent intent = new Intent(TestActivity.this, Test2Act.class);
                     startActivity(intent);
                 }else {

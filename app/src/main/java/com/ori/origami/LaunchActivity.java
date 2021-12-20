@@ -16,6 +16,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.ori.origami.databinding.ActivityLaunchBinding;
+import com.ori.origami.jni.NativeOriTranscoding;
 import com.origami.activity.OriImageActivity;
 import com.origami.activity.OriImageSelect;
 import com.origami.origami.base.act.OriBaseActivity;
@@ -23,9 +24,11 @@ import com.origami.origami.base.callback.RequestPermissionNext;
 import com.origami.origami.base.annotation.BClick;
 import com.origami.origami.base.annotation.BContentView;
 import com.origami.origami.base.toast.OriToast;
-import com.origami.origami.base.toast.ToastMsg;
+
 import com.origami.utils.Ori;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 
 @SuppressLint("NonConstantResourceId")
@@ -128,8 +131,20 @@ public class LaunchActivity extends OriBaseActivity<ActivityLaunchBinding> {
     @BClick(R.id.cl)
     public void onClick(){
         OriToast.show(Ori.getRandomString(1), true);
+        String saveFilePath = Ori.getSaveFilePath(this);
+        String outPath = saveFilePath + "out.alaw";
+        File file = new File(outPath);
+        if(!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        NativeOriTranscoding nativeOriTranscoding = new NativeOriTranscoding(saveFilePath + "test.pcm", outPath);
+        nativeOriTranscoding.initTranscoding();
 //        ToastMsg.show_msg(Ori.getRandomString(8), true, 2000);
-//        if(true){return;}
+        if(true){return;}
         checkPermissionAndThen(new String[]{
                 Manifest.permission.READ_EXTERNAL_STORAGE,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE}, new RequestPermissionNext() {
@@ -191,19 +206,16 @@ public class LaunchActivity extends OriBaseActivity<ActivityLaunchBinding> {
         }else {
             radius = 50;
         }
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                ToastMsg.show_msg("等待处理...", false, 7000);
-                int i = NativeBitmap.testBitmap(bitmap, radius);
-                ToastMsg.show_msg("处理完成->" + i, true, 1000);
-                getWindow().getDecorView().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        OriImageActivity.startThisAct(LaunchActivity.this, bitmap, false);
-                    }
-                },1000);
-            }
+        new Thread(() -> {
+            OriToast.show("等待处理...", false, false);
+            int i = NativeBitmap.testBitmap(bitmap, radius);
+            OriToast.show("处理完成->" + i, true, false);
+            getWindow().getDecorView().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    OriImageActivity.startThisAct(LaunchActivity.this, bitmap, false);
+                }
+            },1000);
         }).start();
     }
 }

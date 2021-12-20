@@ -38,6 +38,15 @@ add_library( # Sets the name of the library.
 
         # Provides a relative path to your source file(s).
         src/main/cpp/ori_rtsp.cpp)
+
+add_library( # Sets the name of the library.
+        ori_transcoding
+
+        # Sets the library as a shared library.
+        SHARED
+
+        # Provides a relative path to your source file(s).
+        src/main/cpp/ori_transcoding.cpp)
 #动态方式加载 STATIC：表示静态的.a的库 SHARED：表示.so的库。
 add_library(qrdatadecode SHARED IMPORTED)
 
@@ -60,6 +69,7 @@ set_target_properties(swscale PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/l
 #添加第三方头文件
 target_include_directories(origami PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/include)
 target_include_directories(ori_rtsp PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/include)
+target_include_directories(ori_transcoding PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/include)
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
 # default, you only need to specify the name of the public NDK library
@@ -93,6 +103,20 @@ target_link_libraries( # Specifies the target library.
 
 target_link_libraries( # Specifies the target library.
         ori_rtsp
+        android
+
+        avcodec
+        avfilter
+        avformat
+        avutil
+        swresample
+        swscale
+        # Links the target library to the log library
+        # included in the NDK.
+        ${log-lib})
+
+target_link_libraries( # Specifies the target library.
+        ori_transcoding
         android
 
         avcodec

@@ -3,8 +3,6 @@ package com.origami.activity;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.widget.ImageView;
 
@@ -13,19 +11,14 @@ import androidx.annotation.Nullable;
 import androidx.core.app.ActivityOptionsCompat;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.RequestFutureTarget;
-import com.bumptech.glide.request.target.AppWidgetTarget;
-import com.bumptech.glide.request.target.BitmapImageViewTarget;
-import com.bumptech.glide.request.target.CustomViewTarget;
 import com.bumptech.glide.request.target.SimpleTarget;
-import com.bumptech.glide.request.target.Target;
 import com.bumptech.glide.request.transition.Transition;
 import com.origami.origami.R;
 import com.origami.origami.base.act.AnnotationActivity;
 import com.origami.origami.base.utils.OriTransfer;
 import com.origami.origami.base.toast.OriToast;
 import com.origami.view.OriImageDetailView;
-import com.origami.window.WindowUtil2;
+import com.origami.window.WindowUtil;
 
 import java.io.File;
 
@@ -114,7 +107,7 @@ public class OriImageActivity extends AnnotationActivity {
         }
         if(save) {
             imageView.setOnLongClickListener(v -> {
-                WindowUtil2.showSelect(OriImageActivity.this, new String[]{"保存"}, (txt, index) -> {
+                WindowUtil.showSelect(OriImageActivity.this, new String[]{"保存"}, (txt, index) -> {
                     int labelRes = getApplication().getApplicationInfo().labelRes;
                     String path;
                     if (labelRes == 0) {
