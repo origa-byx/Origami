@@ -1,6 +1,5 @@
 package com.origami.audio;
 
-import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
@@ -8,7 +7,6 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.origami.App;
-import com.origami.utils.Ori;
 
 import java.io.File;
 import java.io.FileNotFoundException;

@@ -29,7 +29,6 @@ public class OriToast {
     private static final int defDy = Dp2px.dp2px(50);
     private static final int defMx = Dp2px.dp2px(30);
 
-    private Toast sToast;
     private View sToastView;
     private final Context context;
 
@@ -45,7 +44,7 @@ public class OriToast {
     @SuppressLint("InflateParams")
     private void initToastIfNeed(){
         if(context == null) throw new RuntimeException("OriToast#context is null, you must invoke init at first");
-        if(sToastView == null || sToast == null){
+        if(sToastView == null){
             sToastView = LayoutInflater.from(context).inflate(R.layout._base_sys_toast, null);
             ViewGroup.LayoutParams params = sToastView.getLayoutParams();
             if(params == null){ params = new ViewGroup.LayoutParams(
@@ -62,7 +61,7 @@ public class OriToast {
     private void toastShow(boolean shortDur, String msg, Boolean icon, int gravity, int dy){
         if(TextUtils.isEmpty(msg)) return;
         if(Looper.myLooper() != Looper.getMainLooper())
-            UiThreadUtil.getInstance().runOnUiThread(()-> t(shortDur, msg, icon, gravity, dy));
+            UiThreadUtil.get().run(()-> t(shortDur, msg, icon, gravity, dy));
         else t(shortDur, msg, icon, gravity, dy);
     }
 
@@ -76,7 +75,8 @@ public class OriToast {
             iconView.setImageResource(icon?R.mipmap._toast_ok:R.mipmap._toast_no);
         }
         ((TextView) sToastView.findViewById(R.id._base_show_toast_msg)).setText(msg);
-        if(sToast == null){ sToast = new Toast(context); sToast.setView(sToastView); }
+        Toast sToast = new Toast(context);
+        sToast.setView(sToastView);
         sToast.setDuration(shortDur? Toast.LENGTH_SHORT: Toast.LENGTH_LONG);
         sToast.setGravity(gravity, 0, dy);
         sToast.show();

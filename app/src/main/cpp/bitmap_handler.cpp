@@ -28,13 +28,13 @@ extern "C" {
         if(info.format != ANDROID_BITMAP_FORMAT_RGB_565 && info.format != ANDROID_BITMAP_FORMAT_NONE){
             comp = 4;
         }
-        px_handler((unsigned char *) px, info.width, info.height, comp);
+//        px_handler((unsigned char *) px, info.width, info.height, comp);
 //        pthread_t thread_id_bitmap = 1;       // 线程ID
 //        int re = pthread_create(&thread_id_bitmap, NULL, gauss_thread, NULL);
 //        if(re){ return -3; }
 //        pthread_join(thread_id_bitmap, NULL); //同步 -> 参考 wait notify
 
-//        gaussianBlur((unsigned char*) px, 0, 0, info.width, info.height, comp, radius);
+        gaussianBlur((unsigned char*) px, 0, 0, info.width, info.height, comp, radius);
         AndroidBitmap_unlockPixels(env, bitmap);
         return 0;
     }

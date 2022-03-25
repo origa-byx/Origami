@@ -1,5 +1,6 @@
 package com.origami.utils;
 
+import android.annotation.SuppressLint;
 import android.text.TextUtils;
 
 import java.text.SimpleDateFormat;
@@ -11,20 +12,19 @@ import java.util.Date;
  * @date 2020/12/3
  * @description:
  **/
+@SuppressLint("SimpleDateFormat")
 public class Time2String {
 
     private final static String[] weekDays = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};
 
-    public static String longToText(long time,boolean add){
+    public static String longToText(long time, boolean add){
         if(add){ time = time * 1000; }
         return timeToText(new Date(time));
     }
 
-    public static String stringToText(String time,String format){
-        if(TextUtils.isEmpty(format)){
-            format = "yyyy-MM-dd HH:mm:ss";
-        }
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(format);
+    public static String stringToText(String time, String format){
+        String mFormat = TextUtils.isEmpty(format)? "yyyy-MM-dd HH:mm:ss" : format;
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(mFormat);
         try {
             Date date = simpleDateFormat.parse(time);
             return timeToText(date);
@@ -49,7 +49,7 @@ public class Time2String {
 //           if(mill/(60*60*1000)>=7)
        {
            String format = simpleDateFormat1.format(date);
-           Integer value = Integer.valueOf(format.split(":")[0]);
+           int value = Integer.parseInt(format.split(":")[0]);
            String font = "上午";
            if(value > 12){
                font = "下午";

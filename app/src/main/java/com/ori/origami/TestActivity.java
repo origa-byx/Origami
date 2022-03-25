@@ -62,6 +62,8 @@ public class TestActivity extends AnnotationActivity {
                 if(index == 0){
                     OriToast.show("我就测试一下能不能成功我就测试一下能不能成功",true, false, Gravity.TOP);
                     Intent intent = new Intent(TestActivity.this, Test2Act.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT);
                     startActivity(intent);
                 }else {
                     NotificationUtil.builder(TestActivity.this, "com.origami.test", "测试")

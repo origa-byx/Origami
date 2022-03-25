@@ -76,8 +76,8 @@ public class Test2Act extends AnnotationActivity {
 
     @SuppressWarnings("unused")
     @BClick(R.id.uii)
-    public void onClick_jni(){
-        finish();
+    public void onClick_jni() {
+        // \u000a finish();
     }
 
     @Override

@@ -10,7 +10,7 @@
         android:id="@+id/_base_makesure_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/_white_4r_8dp"
+        android:background="@drawable/_white_4r_8dp_borb"
         android:elevation="5dp"
         android:padding="20dp"
         android:textSize="16sp"
@@ -20,17 +20,24 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="3dp"
         android:orientation="horizontal">
+
+        <View
+            android:layout_width="0dp"
+            android:visibility="invisible"
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
 
         <TextView
             android:id="@+id/_base_makesure_cancel"
             android:visibility="invisible"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:background="@drawable/_select_white_gray_4r8dp"
             android:elevation="5dp"
             android:padding="10dp"
+            android:layout_marginStart="10dp"
             android:textColor="@color/_ori_red"
             android:gravity="center"
             android:textSize="14sp"
@@ -39,8 +46,8 @@
         <TextView
             android:id="@+id/_base_makesure_ok"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_marginStart="20dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
             android:background="@drawable/_select_white_gray_4r8dp"
             android:elevation="5dp"
             android:padding="10dp"

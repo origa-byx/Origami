@@ -22,22 +22,28 @@
         <activity android:name=".LaunchActivity"
             android:screenOrientation="portrait"
             android:launchMode="singleTop">
-<!--            <intent-filter>-->
-<!--                <action android:name="android.intent.action.MAIN"/>-->
-<!--                <category android:name="android.intent.category.LAUNCHER"/>-->
-<!--            </intent-filter>-->
-        </activity>
-        <activity android:name=".TestActivity"
-            android:screenOrientation="portrait" android:launchMode="singleTop" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <activity android:name=".TestActivity"
+            android:screenOrientation="portrait" android:launchMode="singleTop" >
+<!--            <intent-filter>-->
+<!--                <action android:name="android.intent.action.MAIN"/>-->
+<!--                <category android:name="android.intent.category.LAUNCHER"/>-->
+<!--            </intent-filter>-->
+        </activity>
         <activity android:name=".Test2Act"
-            android:screenOrientation="portrait" android:launchMode="singleInstance"/>
+            android:screenOrientation="portrait"
+            android:launchMode="standard"
+            android:documentLaunchMode="intoExisting"
+            android:process=":test"/>
         <activity android:name=".Test_recycler"
-            android:screenOrientation="portrait" android:launchMode="singleTop"/>
+            android:screenOrientation="portrait"
+            android:launchMode="singleTop"/>
+        <service android:name=".http.HttpServer"
+            android:process=":down" />
     </application>
 
 </manifest>

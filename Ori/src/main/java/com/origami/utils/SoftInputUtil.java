@@ -20,116 +20,113 @@ public class SoftInputUtil {
     private int navigationHeight = 0;
 
     private View currentView;
-
-    private View[] anyView;
     private ISoftInputChanged listener;
     private boolean isSoftInputShowing = false;
 
-    private View.OnFocusChangeListener sFocusChangeListener;
+    private final View.OnFocusChangeListener sFocusChangeListener;
 
-    private SoftInputUtil() { }
+    private SoftInputUtil() {
+        sFocusChangeListener = (v, hasFocus) -> {
+            if(hasFocus){
+                currentView = v;
+            }
+        };
+    }
 
     public static SoftInputUtil Build(){
         return new SoftInputUtil();
     }
 
     public interface ISoftInputChanged {
+        /**
+         * @param isSoftInputShow 键盘是否显示
+         * @param softInputHeight 键盘高度
+         * @param viewOffset 当前焦点view底部 - 键盘顶部 的差值
+         */
         void onChanged(boolean isSoftInputShow, int softInputHeight, int viewOffset);
     }
 
-    public void attachSoftInput(View moveView,final View... anyView) {
-        attachSoftInput(new ISoftInputChanged() {
-            @Override
-            public void onChanged(boolean isSoftInputShow, int softInputHeight, int viewOffset) {
-                if(isSoftInputShow) {
-                    moveView.setTranslationY(-viewOffset);
-                }else {
-                    moveView.setTranslationY(0);
-                }
-            }
-        },anyView);
+    public void attachSoftInput(View moveView, final View... anyView){
+        attachSoftInput(moveView, moveView.getRootView(), anyView);
     }
 
-    public void attachSoftInput( final ISoftInputChanged listener, final View... anyView) {
-        if (anyView == null || listener == null || anyView.length == 0)
-            return;
+    public void attachSoftInput(View moveView, View rootView, final View... anyView) {
+        attachSoftInput(rootView, (isSoftInputShow, softInputHeight, viewOffset) -> {
+            if(isSoftInputShow && viewOffset > 0) {
+                moveView.setTranslationY(-viewOffset);
+            }else {
+                moveView.setTranslationY(0);
+            }
+        });
+        addAttachView(anyView);
+    }
 
-        if(anyView.length > 1){
-            sFocusChangeListener = new View.OnFocusChangeListener() {
-                @Override
-                public void onFocusChange(View v, boolean hasFocus) {
-                    if(hasFocus){
-                        currentView = v;
-                    }
-                }
-            };
+    public void addAttachView(final View... anyView){
+        if(anyView != null && anyView.length > 0){
             for (View view : anyView) {
                 view.setOnFocusChangeListener(sFocusChangeListener);
             }
         }
+    }
 
-        //根View
-        final View rootView = anyView[0].getRootView();
-        if (rootView == null)
-            return;
-
-        navigationHeight = getNavigationBarHeight(anyView[0].getContext());
-
-        //anyView为需要调整高度的View，理论上来说可以是任意的View
-        this.currentView = anyView[0];
-        this.anyView = anyView;
+    public void setMyListener(ISoftInputChanged listener) {
         this.listener = listener;
+    }
 
-        rootView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
-            @Override
-            public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
-                //对于Activity来说，该高度即为屏幕高度
-                int rootHeight = rootView.getHeight();
-                Rect rect = new Rect();
-                //获取当前可见部分，默认可见部分是除了状态栏和导航栏剩下的部分
-                rootView.getWindowVisibleDisplayFrame(rect);
+    /**
+     * @param rootView  根view {@link View#getRootView()}
+     * @param listener 监听器
+     */
+    private void attachSoftInput(View rootView, final ISoftInputChanged listener) {
+        if (listener == null || rootView == null) return;
+        this.listener = listener;
+        navigationHeight = getNavigationBarHeight(rootView.getContext());
+        //anyView为需要调整高度的View，理论上来说可以是任意的View
+        this.currentView = null;
 
-                if (rootHeight - rect.bottom == navigationHeight) {
-                    //如果可见部分底部与屏幕底部刚好相差导航栏的高度，则认为有导航栏
-                    isNavigationBarShow = true;
-                } else if (rootHeight - rect.bottom == 0) {
-                    //如果可见部分底部与屏幕底部平齐，说明没有导航栏
-                    isNavigationBarShow = false;
+        rootView.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+            if(currentView == null) return;
+            //对于Activity来说，该高度即为屏幕高度
+            int rootHeight = rootView.getHeight();
+            Rect rect = new Rect();
+            //获取当前可见部分，默认可见部分是除了状态栏和导航栏剩下的部分
+            rootView.getWindowVisibleDisplayFrame(rect);
+            if (rootHeight - rect.bottom == navigationHeight) {
+                //如果可见部分底部与屏幕底部刚好相差导航栏的高度，则认为有导航栏
+                isNavigationBarShow = true;
+            } else if (rootHeight - rect.bottom == 0) {
+                //如果可见部分底部与屏幕底部平齐，说明没有导航栏
+                isNavigationBarShow = false;
+            }
+            //cal softInput height
+            boolean isSoftInputShow = false;
+            int softInputHeight = 0;
+            //如果有导航栏，则要去除导航栏的高度
+            int mutableHeight = isNavigationBarShow ? navigationHeight : 0;
+            if (rootHeight - mutableHeight > rect.bottom) {
+                //除去导航栏高度后，可见区域仍然小于屏幕高度，则说明键盘弹起了
+                isSoftInputShow = true;
+                //键盘高度
+                softInputHeight = rootHeight - mutableHeight - rect.bottom;
+                if (SoftInputUtil.this.softInputHeight != softInputHeight) {
+                    softInputHeightChanged = true;
+                    SoftInputUtil.this.softInputHeight = softInputHeight;
+                } else {
+                    softInputHeightChanged = false;
                 }
+            }
 
-                //cal softInput height
-                boolean isSoftInputShow = false;
-                int softInputHeight = 0;
-                //如果有导航栏，则要去除导航栏的高度
-                int mutableHeight = isNavigationBarShow ? navigationHeight : 0;
-                if (rootHeight - mutableHeight > rect.bottom) {
-                    //除去导航栏高度后，可见区域仍然小于屏幕高度，则说明键盘弹起了
-                    isSoftInputShow = true;
-                    //键盘高度
-                    softInputHeight = rootHeight - mutableHeight - rect.bottom;
-                    if (SoftInputUtil.this.softInputHeight != softInputHeight) {
-                        softInputHeightChanged = true;
-                        SoftInputUtil.this.softInputHeight = softInputHeight;
-                    } else {
-                        softInputHeightChanged = false;
-                    }
-                }
+            //获取目标View的位置坐标
+            int[] location = new int[2];
+            currentView.getLocationOnScreen(location);
 
-                //获取目标View的位置坐标
-                int[] location = new int[2];
-                currentView.getLocationOnScreen(location);
-
-                //条件1减少不必要的回调，只关心前后发生变化的
-                //条件2针对软键盘切换手写、拼音键等键盘高度发生变化
-                if (isSoftInputShowing != isSoftInputShow || (isSoftInputShow && softInputHeightChanged)) {
-                    if (listener != null) {
-                        //第三个参数为该View需要调整的偏移量
-                        //此处的坐标都是相对屏幕左上角(0,0)为基准的
-                        listener.onChanged(isSoftInputShow, softInputHeight, location[1] + currentView.getHeight() - rect.bottom);
-                    }
-
-                    isSoftInputShowing = isSoftInputShow;
-                }
+            //条件1减少不必要的回调，只关心前后发生变化的
+            //条件2针对软键盘切换手写、拼音键等键盘高度发生变化
+            if (isSoftInputShowing != isSoftInputShow || (isSoftInputShow && softInputHeightChanged)) {
+                //第三个参数为该View需要调整的偏移量
+                //此处的坐标都是相对屏幕左上角(0,0)为基准的
+                this.listener.onChanged(isSoftInputShow, softInputHeight, location[1] + currentView.getHeight() - rect.bottom);
+                isSoftInputShowing = isSoftInputShow;
             }
         });
     }

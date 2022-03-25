@@ -16,10 +16,11 @@ import androidx.annotation.NonNull;
 public class NativeRtspPlay {
 
     static {
-        System.loadLibrary("ori_rtsp");
+        System.loadLibrary("ori_hyn");
     }
 
     //C++ 存放类对象地址
+    @SuppressWarnings("unused")
     private long native_obj_ptr;
 
     public NativeRtspPlay(Surface surface) {

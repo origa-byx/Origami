@@ -70,6 +70,7 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
     protected void onCreate(@Nullable Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         Log.e("ORI",String.format("init -> %s", this.getClass().getSimpleName()));
+        Log.e("ORI", "-> " + android.os.Process.myPid());
         onCreateBefore(savedInstanceState);
         BContentView contentView = getClass().getAnnotation(BContentView.class);
         if(contentView != null){
@@ -92,7 +93,6 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
                     findViewById(i).setOnClickListener(this);
                 }
             }
-
         }
         AnnotationActivityManager.addActivity(this);
         setStatusBar();
@@ -168,14 +168,17 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
         Method method = methodSparseArray.get(v.getId());
         if(method != null){
             try {
-                boolean accessible = method.isAccessible();
-                if(method.getModifiers() != Modifier.PUBLIC && !accessible){
+                Class<?>[] parameterTypes = method.getParameterTypes();
+                boolean accessible = method.getModifiers() != Modifier.PUBLIC && !method.isAccessible();
+                if(accessible)
                     method.setAccessible(true);
-                    method.invoke(this);
+                if(parameterTypes.length == 1){
+                    if(parameterTypes[0] == int.class)
+                        method.invoke(this, v.getId());
+                    else method.invoke(this, v);
+                }else method.invoke(this);
+                if(accessible)
                     method.setAccessible(false);
-                }else{
-                    method.invoke(this);
-                }
             } catch (IllegalAccessException | InvocationTargetException e) {
                 e.printStackTrace();
             }

@@ -154,8 +154,8 @@ public class Ori {
     /**
      * 大概就是生成默认的selector drawable 给 一个按钮
      * @param context
-     * @param color_out     边框
-     * @param color_in      内部
+     * @param color_out     边框  相对于 okIsHasBor = true时
+     * @param color_in      内部  相对于 okIsHasBor = true时
      * @param okIsHasBor   true： 按下是切换为 有边框的
      * @return
      */
@@ -306,10 +306,11 @@ public class Ori {
         try {
             filePic = new File(save_path);
             if (!filePic.exists()) {
-                if(filePic.getParentFile() != null) {
-                    filePic.getParentFile().mkdirs();
-                }
-                filePic.createNewFile();
+                File parentFile;
+                if((parentFile = filePic.getParentFile()) != null && !parentFile.mkdirs())
+                    Log.e("ORI", "parent file mkdir failed");
+                if (!filePic.createNewFile())
+                    Log.e("ORI", "file create failed");
             }
             FileOutputStream fos = new FileOutputStream(filePic);
             mBitmap.compress(format, 100, fos);

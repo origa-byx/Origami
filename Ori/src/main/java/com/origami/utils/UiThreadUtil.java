@@ -16,8 +16,9 @@ import androidx.annotation.NonNull;
  * @info:
  **/
 public class UiThreadUtil {
-    public synchronized static UiThreadUtil getInstance(){
-        if(instance == null){ instance = new UiThreadUtil(); }
+    public synchronized static UiThreadUtil get(){
+        if(instance == null)
+            instance = new UiThreadUtil();
         return instance;
     }
     private static UiThreadUtil instance;
@@ -31,7 +32,13 @@ public class UiThreadUtil {
         };
     }
 
-    public void runOnUiThread(Runnable runnable){
+    public void run(Runnable runnable, long delay){
+        Message message = new Message();
+        message.obj = runnable;
+        uiHandler.sendMessageDelayed(message, delay);
+    }
+
+    public void run(Runnable runnable){
         Message message = new Message();
         message.obj = runnable;
         uiHandler.sendMessage(message);
@@ -46,7 +53,7 @@ public class UiThreadUtil {
         return uiHandler;
     }
 
-    public void runOnUiThread(Activity activity, Runnable runnable){
+    public void run(Activity activity, Runnable runnable){
         activity.runOnUiThread(runnable);
     }
 

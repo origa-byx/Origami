@@ -19,4 +19,5 @@ public @interface BindEvent {
     int NEW_T = 2;
 
     int runAt() default MAIN_T;
+    String value() default "";
 }

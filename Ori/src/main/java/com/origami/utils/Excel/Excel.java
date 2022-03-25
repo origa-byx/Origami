@@ -2,6 +2,7 @@ package com.origami.utils.Excel;
 
 
 import android.text.TextUtils;
+import android.util.Log;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,7 +45,8 @@ public class Excel<B extends XlsBean> {
      * @param <Bean>    对象
      * @return  Excel<Bean>
      */
-    public static <Bean extends XlsBean> Excel<Bean> build_CreateNewFile(Class<Bean> bean, String savePath) throws IOException, BiffException {
+    public static <Bean extends XlsBean> Excel<Bean>
+    build_CreateNewFile(Class<Bean> bean, String savePath) throws IOException {
         return new Excel<>(bean, true, savePath);
     }
 
@@ -57,7 +59,8 @@ public class Excel<B extends XlsBean> {
      * @param <Bean>    对象
      * @return  Excel<Bean>
      */
-    public static <Bean extends XlsBean> Excel<Bean> build_OpenFile(Class<Bean> bean, String path) throws IOException, BiffException {
+    public static <Bean extends XlsBean> Excel<Bean>
+    build_OpenFile(Class<Bean> bean, String path) throws IOException {
         return new Excel<>(bean, false, path);
     }
 
@@ -68,11 +71,13 @@ public class Excel<B extends XlsBean> {
      * @param <Bean>    对象
      * @return  Excel<Bean>
      */
-    public static <Bean extends XlsBean> Excel<Bean> build_ReadFile(Class<Bean> bean, String path) throws IOException, BiffException {
+    public static <Bean extends XlsBean> Excel<Bean>
+    build_ReadFile(Class<Bean> bean, String path) throws IOException, BiffException {
         return new Excel<>(bean, path);
     }
 
-    public static <Bean extends XlsBean> Excel<Bean> build_ReadFile(Class<Bean> bean, InputStream stream) throws IOException, BiffException {
+    public static <Bean extends XlsBean> Excel<Bean>
+    build_ReadFile(Class<Bean> bean, InputStream stream) throws IOException, BiffException {
         return new Excel<>(bean, stream);
     }
 
@@ -131,12 +136,9 @@ public class Excel<B extends XlsBean> {
     }
 
 
-    private void createParentIfNotExists(File file) throws IOException {
-        if (!file.exists()) {
-            if(file.getParentFile() != null) {
-                file.getParentFile().mkdirs();
-            }
-        }
+    private void createParentIfNotExists(File file) {
+        if(!file.exists() && file.getParentFile() != null && !file.getParentFile().mkdirs())
+            Log.e("Excel", "parent mkdirs failed");
     }
 
     private void initClassFieldsAndFormats(){
@@ -160,7 +162,8 @@ public class Excel<B extends XlsBean> {
             Field field = fieldIndexMap.get(index);
             if(field == null) { continue; }
             try {
-                Label label = new Label(index, row, String.valueOf(field.get(obj)));
+                Object val = field.get(obj);
+                Label label = new Label(index, row, String.valueOf(val == null?"" : val));
                 if(row % 2 == 0){
                     if(format_gray != null){ label.setCellFormat(format_gray); }
                 }else {
@@ -257,7 +260,8 @@ public class Excel<B extends XlsBean> {
             if(noData && !TextUtils.isEmpty(mPath)){
                 ok = false;
                 File file = new File(mPath);
-                if(file.exists()){ file.delete(); }
+                if(file.exists() && !file.delete())
+                    Log.e("Excel", "delete failed");
             }
         }
         return ok;
