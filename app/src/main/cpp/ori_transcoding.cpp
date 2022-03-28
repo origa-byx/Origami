@@ -66,7 +66,7 @@ void Transcoding::init() {
 
 //    AVCodecID avCodecId = AV_CODEC_ID_MP3;
     infile = fopen(srcPath.data(), "rb");
-    m_AudioCodec = avcodec_find_encoder(AVCodecID::AV_CODEC_ID_MP3);
+    m_AudioCodec = avcodec_find_encoder(AVCodecID::AV_CODEC_ID_AV1);
     if(!m_AudioCodec){
         LOG_E("编码器查找失败");
         return;

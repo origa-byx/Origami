@@ -37,6 +37,7 @@ add_library( # Sets the name of the library.
         SHARED
 
         # Provides a relative path to your source file(s).
+        src/main/cpp/ori_audio.cpp
         src/main/cpp/ori_hyn.cpp)
 
 add_library( # Sets the name of the library.

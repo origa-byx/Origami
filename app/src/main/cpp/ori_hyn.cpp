@@ -100,14 +100,14 @@ extern "C" {
     Java_com_ori_origami_NativeRtspPlay_play(JNIEnv *env, jobject thiz){
         OriDecode* m_video;
         getOriDecode(&m_video, *env, thiz);
-        m_video->stop = true;
+        m_video->stop = false;
     }
 
     JNIEXPORT void JNICALL
     Java_com_ori_origami_NativeRtspPlay_stop(JNIEnv *env, jobject thiz){
         OriDecode* m_video;
         getOriDecode(&m_video, *env, thiz);
-        m_video->stop = false;
+        m_video->stop = true;
     }
 
     JNIEXPORT jboolean JNICALL
@@ -163,6 +163,7 @@ void OriDecode::decodeUrl(const std::string & m_Url){
         LOG_E("DecoderBase::InitFFDecoder avformat_find_stream_info fail.");
         return;
     }
+
     //视频通道
     uint32_t videoStreamIndex = -1;
     //音频通道
@@ -188,103 +189,59 @@ void OriDecode::decodeUrl(const std::string & m_Url){
     }
 
     //--------------------------查找视频解码器--------------------------
-    if(!m_videoDecode->findAndOpenDecoder(*m_AVFormatContext, videoStreamIndex)){
+    if(!m_videoDecode->findAndOpenDecoder(*m_AVFormatContext, videoStreamIndex))
         return;
-    }
+    else
+        loopVDecode();
 
-    if(audioStreamIndex == -1 && )
+
+    if(audioStreamIndex != -1){
+        if(!m_audioDecode->findAndOpenDecoder(*m_AVFormatContext, audioStreamIndex)){
+             LOG_E("DecoderBase::InitFFDecoder Fail to find stream index(audioStreamIndex).");
+             return;
+        }else
+             loopADecode();
+    }
 
     LOG_E("开始解码...");
     //解码循环
-    while (av_read_frame(m_AVFormatContext, m_videoDecode->m_Packet) >= 0) {//读取帧
-        //todo 播放暂停改线程阻塞 非自旋
-        while (stop){ }
-        if (m_videoDecode->m_Packet->stream_index == videoStreamIndex) {
-            if (avcodec_send_packet(m_videoDecode->m_AVCodecContext, m_videoDecode->m_Packet) != 0) { //视频解码
-                return;
-            }
-            LOG_I("---------------------单帧视频解码-----------------------");
-            while (avcodec_receive_frame(m_videoDecode->m_AVCodecContext, m_videoDecode->m_Frame) == 0) {
-                //获取到 m_Frame 解码数据，在这里进行格式转换，然后进行渲染
-                //格式转换yuv -> rgb
-                sws_scale(m_videoDecode->m_SwsContext, m_videoDecode->m_Frame->data, m_videoDecode->m_Frame->linesize, 0,
-                          m_videoDecode->m_VideoHeight, m_videoDecode->m_RGBAFrame->data, m_videoDecode->m_RGBAFrame->linesize);
+    while (true) {//读取帧
+        AVPacket * freeAvPacket = get_mAVPacket();
+        if(av_read_frame(m_AVFormatContext, freeAvPacket) <= 0)
+            break;
 
-                //3. 渲染
-                ANativeWindow_Buffer m_NativeWindowBuffer;
-                //锁定当前 Window ，获取屏幕缓冲区 Buffer 的指针
-                ANativeWindow_lock(m_videoDecode->m_NativeWindow, &m_NativeWindowBuffer, nullptr);
-                auto *dstBuffer = static_cast<uint8_t *>(m_NativeWindowBuffer.bits);
-
-                int srcLineSize = m_videoDecode->m_RGBAFrame->linesize[0];//输入图的步长（一行像素有多少字节）
-                int dstLineSize = m_NativeWindowBuffer.stride * 4;//RGBA 缓冲区步长
-//                LOG_I("srcLineSize: %d", srcLineSize);
-//                LOG_I("dstLineSize: %d", dstLineSize);
-                for (int i = m_videoDecode->m_offsetHeight; i < m_videoDecode->m_targetHeight; ++i) {
-                    //一行一行地拷贝图像数据
-                    memcpy(dstBuffer + i * dstLineSize + m_videoDecode->m_offsetWidth * 4,
-                           m_videoDecode->m_FrameBuffer + i * srcLineSize, srcLineSize);
-                }
-                //解锁当前 Window ，渲染缓冲区数据
-                ANativeWindow_unlockAndPost(m_videoDecode->m_NativeWindow);
-            }
+        if(freeAvPacket->stream_index == videoStreamIndex){
+            m_videoDecode->packetQueue.push(freeAvPacket);
+        }else if(freeAvPacket->stream_index == audioStreamIndex){
+            m_audioDecode->packetQueue.push(freeAvPacket);
+        } else {
+            freePacketQueue.push(freeAvPacket);
         }
-        //音频解码
-        else if(m_videoDecode->m_Packet->stream_index == audioStreamIndex){
-            if (avcodec_send_packet(m_audioDecode->m_AVCodecContext, m_videoDecode->m_Packet) != 0) { //视频解码
-                return;
-            }
-            LOG_I("---------------------单帧音频解码-----------------------");
-            while (avcodec_receive_frame(m_audioDecode->m_AVCodecContext, m_videoDecode->m_Frame) == 0) {
-                //获取到 m_Frame 解码数据，在这里进行格式转换，然后进行渲染
-                //格式转换yuv -> rgb
-                sws_scale(m_videoDecode->m_SwsContext, m_videoDecode->m_Frame->data, m_videoDecode->m_Frame->linesize, 0,
-                          m_videoDecode->m_VideoHeight, m_videoDecode->m_RGBAFrame->data, m_videoDecode->m_RGBAFrame->linesize);
-
-                //3. 渲染
-                ANativeWindow_Buffer m_NativeWindowBuffer;
-                //锁定当前 Window ，获取屏幕缓冲区 Buffer 的指针
-                ANativeWindow_lock(m_videoDecode->m_NativeWindow, &m_NativeWindowBuffer, nullptr);
-                auto *dstBuffer = static_cast<uint8_t *>(m_NativeWindowBuffer.bits);
-
-                int srcLineSize = m_videoDecode->m_RGBAFrame->linesize[0];//输入图的步长（一行像素有多少字节）
-                int dstLineSize = m_NativeWindowBuffer.stride * 4;//RGBA 缓冲区步长
-                LOG_I("srcLineSize: %d", srcLineSize);
-                LOG_I("dstLineSize: %d", dstLineSize);
-                for (int i = m_videoDecode->m_offsetHeight; i < m_videoDecode->m_targetHeight; ++i) {
-                    //一行一行地拷贝图像数据
-                    memcpy(dstBuffer + i * dstLineSize + m_videoDecode->m_offsetWidth * 4,
-                           m_videoDecode->m_FrameBuffer + i * srcLineSize, srcLineSize);
-                }
-                //解锁当前 Window ，渲染缓冲区数据
-                ANativeWindow_unlockAndPost(m_videoDecode->m_NativeWindow);
-            }
-        }
-        av_packet_unref(m_videoDecode->m_Packet); //释放 m_Packet 引用，防止内存泄漏
     }
 
-    //释放资源，解码完成
 //    avformat_network_deinit();
 
-    if(m_videoDecode->m_Frame != nullptr) {
-        av_frame_free(&m_videoDecode->m_Frame);
-        m_videoDecode->m_Frame = nullptr;
-    }
+    release();
+}
 
-    if(m_videoDecode->m_Packet != nullptr) {
-        av_packet_free(&m_videoDecode->m_Packet);
-        m_videoDecode->m_Packet = nullptr;
-    }
+AVPacket * OriDecode::get_mAVPacket(){
+    AVPacket * freeAvPacket;
+    if(!freePacketQueue.empty()){
+        freeAvPacket = freePacketQueue.front();
+        freePacketQueue.pop();
+    }else
+        freeAvPacket = av_packet_alloc();
+    return freeAvPacket;
+}
 
-    if(m_videoDecode->m_AVCodecContext != nullptr) {
-        avcodec_close(m_videoDecode->m_AVCodecContext);
-        avcodec_free_context(&m_videoDecode->m_AVCodecContext);
-        m_videoDecode->m_AVCodecContext = nullptr;
-        m_videoDecode->m_AVCodec = nullptr;
-    }
-    avformat_close_input(&m_AVFormatContext);
-    avformat_free_context(m_AVFormatContext);
-    m_AVFormatContext = nullptr;
+AVFrame * OriDecode::get_mAVFrame(){
+    AVFrame * freeAvFrame;
+    if(!freeFrameQueue.empty()){
+        freeAvFrame = freeFrameQueue.front();
+        freeFrameQueue.pop();
+    }else
+        freeAvFrame = av_frame_alloc();
+    return freeAvFrame;
 }
 
 /**
@@ -310,15 +267,15 @@ bool VideoDecode::findAndOpenDecoder(AVFormatContext &avFormatContext, uint32_t 
     }
 
     //打开解码器
-    int result = avcodec_open2(m_AVCodecContext, m_AVCodec, NULL);
+    int result = avcodec_open2(m_AVCodecContext, m_AVCodec, nullptr);
     if(result < 0) {
         LOG_E("DecoderBase::InitFFDecoder avcodec_open2 fail. result=%d", result);
         return false;
     }
 
     //创建存储编码数据和解码数据的结构体
-    m_Packet = av_packet_alloc(); //创建 AVPacket 存放编码数据
-    m_Frame = av_frame_alloc(); //创建 AVFrame 存放解码后的数据
+//    m_Packet = av_packet_alloc(); //创建 AVPacket 存放编码数据
+//    m_Frame = av_frame_alloc(); //创建 AVFrame 存放解码后的数据
     yuv2rgbFrame_init();
     return true;
 }
@@ -377,6 +334,132 @@ void VideoDecode::yuv2rgbFrame_init(){
                                   SWS_FAST_BILINEAR, NULL, NULL, NULL);
 }
 
+void OriDecode::loopVDecode() {
+    std::thread loopV(loopVideoDecode, *this);
+    std::thread loopRender(loopVideoRender, this->m_videoDecode, freeFrameQueue);
+    loopV.detach();
+    loopRender.detach();
+}
+void OriDecode::loopADecode() {
+    std::thread loopA(loopAudioDecode, *this);
+    std::thread loopAudio(loopAudioPlay, this->m_audioDecode, freeFrameQueue);
+    loopA.detach();
+    loopAudio.detach();
+}
+
+void loopVideoRender(VideoDecode* videoDecode, std::queue<AVFrame *>& freeFrameQueue){
+    while (!*videoDecode->stop){
+        if(videoDecode->frameQueue.empty())
+            continue;
+        AVFrame * m_Frame = videoDecode->frameQueue.front();
+        videoDecode->frameQueue.pop();
+        sws_scale(videoDecode->m_SwsContext, m_Frame->data,
+                  m_Frame->linesize, 0,
+                  videoDecode->m_VideoHeight, videoDecode->m_RGBAFrame->data,
+                  videoDecode->m_RGBAFrame->linesize);
+        //渲染
+        ANativeWindow_Buffer m_NativeWindowBuffer;
+        //锁定当前 Window ，获取屏幕缓冲区 Buffer 的指针
+        ANativeWindow_lock(videoDecode->m_NativeWindow, &m_NativeWindowBuffer, nullptr);
+        auto *dstBuffer = static_cast<uint8_t *>(m_NativeWindowBuffer.bits);
+
+        int srcLineSize = videoDecode->m_RGBAFrame->linesize[0];//输入图的步长（一行像素有多少字节）
+        int dstLineSize = m_NativeWindowBuffer.stride * 4;//RGBA 缓冲区步长
+//                LOG_I("srcLineSize: %d", srcLineSize);
+//                LOG_I("dstLineSize: %d", dstLineSize);
+        for (int i = videoDecode->m_offsetHeight; i < videoDecode->m_targetHeight; ++i) {
+            //一行一行地拷贝图像数据
+            memcpy(dstBuffer + i * dstLineSize + videoDecode->m_offsetWidth * 4,
+                   videoDecode->m_FrameBuffer + i * srcLineSize, srcLineSize);
+        }
+        //解锁当前 Window ，渲染缓冲区数据
+        ANativeWindow_unlockAndPost(videoDecode->m_NativeWindow);
+        av_frame_unref(m_Frame);
+        freeFrameQueue.push(m_Frame);
+    }
+}
+
+void loopAudioPlay(AudioDecode* audioDecode, std::queue<AVFrame *>& freeFrameQueue){
+    while (!*audioDecode->stop){
+        if(audioDecode->frameQueue.empty())
+            continue;
+        AVFrame * m_Frame = audioDecode->frameQueue.front();
+        audioDecode->frameQueue.pop();
+
+
+
+        av_frame_unref(m_Frame);
+        freeFrameQueue.push(m_Frame);
+    }
+}
+
+/**
+ * 解码并渲染视频的线程
+ * @param videoDecode
+ */
+void loopVideoDecode(OriDecode& oriDecode){
+    VideoDecode videoDecode = *oriDecode.m_videoDecode;
+    while (!oriDecode.stop) {
+        if(videoDecode.packetQueue.empty())
+            continue;
+        AVPacket* m_Packet = videoDecode.packetQueue.front();
+        videoDecode.packetQueue.pop();
+        if (avcodec_send_packet(videoDecode.m_AVCodecContext, m_Packet) == 0) {
+            LOG_I("---------------------单帧视频解码-----------------------");
+            AVFrame * m_Frame = oriDecode.get_mAVFrame();
+            if (avcodec_receive_frame(videoDecode.m_AVCodecContext, m_Frame) == 0) {
+                //获取到 m_Frame 解码数据，在这里进行格式转换，然后进行渲染
+                //格式转换yuv -> rgb
+                sws_scale(videoDecode.m_SwsContext, m_Frame->data,
+                          m_Frame->linesize, 0,
+                          videoDecode.m_VideoHeight, videoDecode.m_RGBAFrame->data,
+                          videoDecode.m_RGBAFrame->linesize);
+
+                //3. 渲染
+                ANativeWindow_Buffer m_NativeWindowBuffer;
+                //锁定当前 Window ，获取屏幕缓冲区 Buffer 的指针
+                ANativeWindow_lock(videoDecode.m_NativeWindow, &m_NativeWindowBuffer, nullptr);
+                auto *dstBuffer = static_cast<uint8_t *>(m_NativeWindowBuffer.bits);
+
+                int srcLineSize = videoDecode.m_RGBAFrame->linesize[0];//输入图的步长（一行像素有多少字节）
+                int dstLineSize = m_NativeWindowBuffer.stride * 4;//RGBA 缓冲区步长
+//                LOG_I("srcLineSize: %d", srcLineSize);
+//                LOG_I("dstLineSize: %d", dstLineSize);
+                for (int i = videoDecode.m_offsetHeight; i < videoDecode.m_targetHeight; ++i) {
+                    //一行一行地拷贝图像数据
+                    memcpy(dstBuffer + i * dstLineSize + videoDecode.m_offsetWidth * 4,
+                           videoDecode.m_FrameBuffer + i * srcLineSize, srcLineSize);
+                }
+                //解锁当前 Window ，渲染缓冲区数据
+                ANativeWindow_unlockAndPost(videoDecode.m_NativeWindow);
+                av_frame_unref(m_Frame);
+                oriDecode.freeFrameQueue.push(m_Frame);
+            }
+        }
+        av_packet_unref(m_Packet);
+        oriDecode.freePacketQueue.push(m_Packet);
+    }
+}
+
+/**
+ * 解码并播放音频的线程
+ * @param audioDecode
+ */
+void loopAudioDecode(OriDecode& oriDecode){
+    AudioDecode audioDecode = *oriDecode.m_audioDecode;
+    while (!oriDecode.stop){
+        if(audioDecode.packetQueue.empty())
+            continue;
+        AVPacket* m_Packet = audioDecode.packetQueue.front();
+        audioDecode.packetQueue.pop();
+
+
+
+        av_packet_unref(m_Packet);
+        oriDecode.freePacketQueue.push(m_Packet);
+    }
+}
+
 void OriDecode::release() {
     m_videoDecode->release();
     m_audioDecode->release();
@@ -403,14 +486,14 @@ void VideoDecode::release() {
         m_SwsContext = nullptr;
     }
 
-    if(m_Frame != nullptr) {
-        av_frame_free(&m_Frame);
-        m_Frame = nullptr;
+    while (!frameQueue.empty()){
+        av_frame_free(&frameQueue.front());
+        frameQueue.pop();
     }
 
-    if(m_Packet != nullptr) {
-        av_packet_free(&m_Packet);
-        m_Packet = nullptr;
+    while (!packetQueue.empty()){
+        av_packet_free(&packetQueue.front());
+        packetQueue.pop();
     }
 
     if(m_AVCodecContext != nullptr) {
@@ -426,7 +509,8 @@ void VideoDecode::release() {
 }
 
 void AudioDecode::release() {
-
+    audioPlayer->openPlayerDevice();
+    delete audioPlayer;
 }
 
 /**
