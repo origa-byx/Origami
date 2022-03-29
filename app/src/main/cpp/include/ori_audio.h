@@ -55,7 +55,7 @@ public:
     SLresult android_setPlayRate(int rateChange);
     double android_getTimestamp() const;
 
-    SLresult startPlay(void (*bqPlayerCallback) (SLAndroidSimpleBufferQueueItf bq, void *context));
+    SLresult startPlay(void (*bqPlayerCallback) (SLAndroidSimpleBufferQueueItf bq, void *context), void* context);
     SLresult setPlayState(SLuint32 state);
 
     SLresult android_openAudioDevice(uint32_t sample_rate, uint32_t out_channels);

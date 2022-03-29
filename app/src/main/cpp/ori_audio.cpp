@@ -117,12 +117,12 @@ SLresult AudioPlayer::openPlayerDevice() {
     return SL_RESULT_SUCCESS;
 }
 
-SLresult AudioPlayer::startPlay(void (*bqPlayerCallback) (SLAndroidSimpleBufferQueueItf, void*)){
+SLresult AudioPlayer::startPlay(void (*bqPlayerCallback) (SLAndroidSimpleBufferQueueItf, void*), void* context){
     //register callback on the buffer queue
     if(currentPlayState == SL_PLAYSTATE_PLAYING)
         return SL_RESULT_SUCCESS;
     SLresult ret;
-    ret = (*bqPlayerBufferQueue)->RegisterCallback(bqPlayerBufferQueue, bqPlayerCallback, this);
+    ret = (*bqPlayerBufferQueue)->RegisterCallback(bqPlayerBufferQueue, bqPlayerCallback, context);
     if(ret != SL_RESULT_SUCCESS) return ret;
     ret = setPlayState(SL_PLAYSTATE_PLAYING);
     return ret;

@@ -48,8 +48,8 @@ android {
         pickFirst 'lib/arm64-v8a/liborigami.so'
         pickFirst 'lib/armeabi-v7a/libori_bitmap.so'
         pickFirst 'lib/arm64-v8a/libori_bitmap.so'
-        pickFirst 'lib/armeabi-v7a/libori_rtsp.so'
-        pickFirst 'lib/arm64-v8a/libori_rtsp.so'
+        pickFirst 'lib/armeabi-v7a/libori_hyn.so'
+        pickFirst 'lib/arm64-v8a/libori_hyn.so'
         pickFirst 'lib/armeabi-v7a/libori_transcoding.so'
         pickFirst 'lib/arm64-v8a/libori_transcoding.so'
     }

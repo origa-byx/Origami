@@ -11,7 +11,7 @@
 #include <fstream>
 #include <cstdio>
 //C++ 线程
-#include <thread>
+#include <pthread.h>
 //C++ 线程同步 等待唤醒
 #include <condition_variable>
 #ifdef __cplusplus
@@ -21,6 +21,7 @@ extern "C"
 #include "include/libswscale/swscale.h"
 #include "include/libavformat/avformat.h"
 #include "include/libavutil/imgutils.h"
+#include "include/libswresample/swresample.h"
 #ifdef __cplusplus
 }
 #endif
@@ -199,23 +200,37 @@ void OriDecode::decodeUrl(const std::string & m_Url){
         if(!m_audioDecode->findAndOpenDecoder(*m_AVFormatContext, audioStreamIndex)){
              LOG_E("DecoderBase::InitFFDecoder Fail to find stream index(audioStreamIndex).");
              return;
-        }else
+        }
+        else
              loopADecode();
     }
 
     LOG_E("开始解码...");
     //解码循环
-    while (true) {//读取帧
-        AVPacket * freeAvPacket = get_mAVPacket();
-        if(av_read_frame(m_AVFormatContext, freeAvPacket) <= 0)
+    while (!stop) {//读取帧
+        LOG_E("get_mAVPacket...");
+        AVPacket * freeAvPacket;
+        get_mAVPacket(&freeAvPacket);
+        LOG_E("读取帧...");
+        int ret = av_read_frame(m_AVFormatContext, freeAvPacket);
+        if(ret == 0){
+            LOG_E("继续读取帧...");
+            freePacketQueue.push(freeAvPacket);
+            continue;
+        }else if(ret < 0){
+            LOG_E("读取帧失败...");
             break;
-
+        }
+        LOG_E("读取帧...成功");
         if(freeAvPacket->stream_index == videoStreamIndex){
             m_videoDecode->packetQueue.push(freeAvPacket);
+            LOG_E("videoStreamIndex...push");
         }else if(freeAvPacket->stream_index == audioStreamIndex){
             m_audioDecode->packetQueue.push(freeAvPacket);
+            LOG_E("audioStreamIndex...push");
         } else {
             freePacketQueue.push(freeAvPacket);
+            LOG_E("...push");
         }
     }
 
@@ -224,14 +239,12 @@ void OriDecode::decodeUrl(const std::string & m_Url){
     release();
 }
 
-AVPacket * OriDecode::get_mAVPacket(){
-    AVPacket * freeAvPacket;
+void OriDecode::get_mAVPacket(AVPacket ** pack){
     if(!freePacketQueue.empty()){
-        freeAvPacket = freePacketQueue.front();
+        *pack = freePacketQueue.front();
         freePacketQueue.pop();
     }else
-        freeAvPacket = av_packet_alloc();
-    return freeAvPacket;
+        *pack = av_packet_alloc();
 }
 
 AVFrame * OriDecode::get_mAVFrame(){
@@ -306,6 +319,16 @@ bool AudioDecode::findAndOpenDecoder(AVFormatContext &avFormatContext, uint32_t 
         LOG_E("DecoderBase::InitFFDecoder avcodec_open2 fail. result=%d", result);
         return false;
     }
+    swr = swr_alloc();
+    swr_alloc_set_opts(swr, out_ch_layout,
+                             out_sample_fmt,
+                             outSampleRate,//输出格式
+                             m_AVCodecContext->channel_layout,
+                             m_AVCodecContext->sample_fmt,
+                             m_AVCodecContext->sample_rate, 0,
+                             nullptr);//输入格式
+    swr_init(swr);
+    out_channel_nb = av_get_channel_layout_nb_channels(out_ch_layout);
     return true;
 }
 
@@ -334,21 +357,38 @@ void VideoDecode::yuv2rgbFrame_init(){
                                   SWS_FAST_BILINEAR, NULL, NULL, NULL);
 }
 
+void run(){}
+
 void OriDecode::loopVDecode() {
-    std::thread loopV(loopVideoDecode, *this);
-    std::thread loopRender(loopVideoRender, this->m_videoDecode, freeFrameQueue);
-    loopV.detach();
-    loopRender.detach();
+    pthread_t loopV_d, loopRender_d;
+    pthread_create(&loopV_d, nullptr, loopVideoDecode, this);
+    pthread_create(&loopRender_d, nullptr, loopVideoRender, this);
+    pthread_detach(loopV_d);
+    pthread_detach(loopRender_d);
 }
 void OriDecode::loopADecode() {
-    std::thread loopA(loopAudioDecode, *this);
-    std::thread loopAudio(loopAudioPlay, this->m_audioDecode, freeFrameQueue);
-    loopA.detach();
-    loopAudio.detach();
+    pthread_t loopA_d, loopAudio_d;
+    pthread_create(&loopA_d, nullptr, loopAudioDecode, this);
+    pthread_create(&loopAudio_d, nullptr, loopAudioPlay, this);
+    pthread_detach(loopA_d);
+    pthread_detach(loopAudio_d);
 }
 
-void loopVideoRender(VideoDecode* videoDecode, std::queue<AVFrame *>& freeFrameQueue){
-    while (!*videoDecode->stop){
+void * loopAudioPlay(void * args){
+    LOG_E("loopAudioPlay");
+    auto* oriDecode = reinterpret_cast<OriDecode* >(args);
+    oriDecode->m_audioDecode->audioPlayer->startPlay([](SLAndroidSimpleBufferQueueItf pd, void* context){
+        auto* audioD = reinterpret_cast<OriDecode*>(context);
+        int32_t size = getBuff2AudioPlay(audioD->m_audioDecode, audioD->freeFrameQueue);
+        (*pd)->Enqueue(pd, audioD->m_audioDecode->buffer, size);
+    }, oriDecode);
+}
+
+void * loopVideoRender(void * args){
+    LOG_E("loopVideoRender");
+    auto * oriDecode = reinterpret_cast<OriDecode* >(args);
+    auto videoDecode = oriDecode->m_videoDecode;
+    while (!oriDecode->stop){
         if(videoDecode->frameQueue.empty())
             continue;
         AVFrame * m_Frame = videoDecode->frameQueue.front();
@@ -375,69 +415,59 @@ void loopVideoRender(VideoDecode* videoDecode, std::queue<AVFrame *>& freeFrameQ
         //解锁当前 Window ，渲染缓冲区数据
         ANativeWindow_unlockAndPost(videoDecode->m_NativeWindow);
         av_frame_unref(m_Frame);
-        freeFrameQueue.push(m_Frame);
+        oriDecode->freeFrameQueue.push(m_Frame);
     }
 }
 
-void loopAudioPlay(AudioDecode* audioDecode, std::queue<AVFrame *>& freeFrameQueue){
+int32_t getBuff2AudioPlay(AudioDecode* audioDecode, std::queue<AVFrame *>& freeFrameQueue){
     while (!*audioDecode->stop){
         if(audioDecode->frameQueue.empty())
             continue;
         AVFrame * m_Frame = audioDecode->frameQueue.front();
         audioDecode->frameQueue.pop();
 
+        int64_t dst_nb_samples = av_rescale_rnd(
+                swr_get_delay(audioDecode->swr, m_Frame->sample_rate) + m_Frame->nb_samples,
+                audioDecode->outSampleRate,
+                m_Frame->sample_rate,
+                AV_ROUND_UP);
 
+        swr_convert(audioDecode->swr, &audioDecode->buffer, dst_nb_samples,
+                             const_cast<const uint8_t **>(m_Frame->data), m_Frame->nb_samples);
 
+        int out_buffer_size = av_samples_get_buffer_size(nullptr, audioDecode->out_channel_nb,
+                                                         m_Frame->nb_samples, audioDecode->out_sample_fmt, 1);
         av_frame_unref(m_Frame);
         freeFrameQueue.push(m_Frame);
+
+        return out_buffer_size;
+
     }
+    return 0;
 }
 
 /**
  * 解码并渲染视频的线程
  * @param videoDecode
  */
-void loopVideoDecode(OriDecode& oriDecode){
-    VideoDecode videoDecode = *oriDecode.m_videoDecode;
-    while (!oriDecode.stop) {
+void * loopVideoDecode(void * args){
+    LOG_E("loopVideoDecode");
+    auto * oriDecode = reinterpret_cast<OriDecode *>(args);
+    VideoDecode videoDecode = *oriDecode->m_videoDecode;
+    while (!oriDecode->stop) {
         if(videoDecode.packetQueue.empty())
             continue;
         AVPacket* m_Packet = videoDecode.packetQueue.front();
         videoDecode.packetQueue.pop();
         if (avcodec_send_packet(videoDecode.m_AVCodecContext, m_Packet) == 0) {
             LOG_I("---------------------单帧视频解码-----------------------");
-            AVFrame * m_Frame = oriDecode.get_mAVFrame();
+            AVFrame * m_Frame = oriDecode->get_mAVFrame();
             if (avcodec_receive_frame(videoDecode.m_AVCodecContext, m_Frame) == 0) {
-                //获取到 m_Frame 解码数据，在这里进行格式转换，然后进行渲染
-                //格式转换yuv -> rgb
-                sws_scale(videoDecode.m_SwsContext, m_Frame->data,
-                          m_Frame->linesize, 0,
-                          videoDecode.m_VideoHeight, videoDecode.m_RGBAFrame->data,
-                          videoDecode.m_RGBAFrame->linesize);
-
-                //3. 渲染
-                ANativeWindow_Buffer m_NativeWindowBuffer;
-                //锁定当前 Window ，获取屏幕缓冲区 Buffer 的指针
-                ANativeWindow_lock(videoDecode.m_NativeWindow, &m_NativeWindowBuffer, nullptr);
-                auto *dstBuffer = static_cast<uint8_t *>(m_NativeWindowBuffer.bits);
-
-                int srcLineSize = videoDecode.m_RGBAFrame->linesize[0];//输入图的步长（一行像素有多少字节）
-                int dstLineSize = m_NativeWindowBuffer.stride * 4;//RGBA 缓冲区步长
-//                LOG_I("srcLineSize: %d", srcLineSize);
-//                LOG_I("dstLineSize: %d", dstLineSize);
-                for (int i = videoDecode.m_offsetHeight; i < videoDecode.m_targetHeight; ++i) {
-                    //一行一行地拷贝图像数据
-                    memcpy(dstBuffer + i * dstLineSize + videoDecode.m_offsetWidth * 4,
-                           videoDecode.m_FrameBuffer + i * srcLineSize, srcLineSize);
-                }
-                //解锁当前 Window ，渲染缓冲区数据
-                ANativeWindow_unlockAndPost(videoDecode.m_NativeWindow);
-                av_frame_unref(m_Frame);
-                oriDecode.freeFrameQueue.push(m_Frame);
+                videoDecode.frameQueue.push(m_Frame);
             }
         }
         av_packet_unref(m_Packet);
-        oriDecode.freePacketQueue.push(m_Packet);
+        oriDecode->freePacketQueue.push(m_Packet);
     }
 }
 
@@ -445,40 +475,53 @@ void loopVideoDecode(OriDecode& oriDecode){
  * 解码并播放音频的线程
  * @param audioDecode
  */
-void loopAudioDecode(OriDecode& oriDecode){
-    AudioDecode audioDecode = *oriDecode.m_audioDecode;
-    while (!oriDecode.stop){
+void * loopAudioDecode(void * args){
+    LOG_E("loopAudioDecode");
+    auto oriDecode = reinterpret_cast<OriDecode *>(args);
+    AudioDecode audioDecode = *oriDecode->m_audioDecode;
+    while (!oriDecode->stop){
         if(audioDecode.packetQueue.empty())
             continue;
         AVPacket* m_Packet = audioDecode.packetQueue.front();
         audioDecode.packetQueue.pop();
 
-
+        if (avcodec_send_packet(audioDecode.m_AVCodecContext, m_Packet) == 0) {
+            LOG_I("---------------------单帧音频解码-----------------------");
+            AVFrame * m_Frame = oriDecode->get_mAVFrame();
+            if (avcodec_receive_frame(audioDecode.m_AVCodecContext, m_Frame) == 0) {
+                audioDecode.frameQueue.push(m_Frame);
+            }
+        }
 
         av_packet_unref(m_Packet);
-        oriDecode.freePacketQueue.push(m_Packet);
+        oriDecode->freePacketQueue.push(m_Packet);
     }
 }
 
 void OriDecode::release() {
+    LOG_E("release");
+    stop = true;
     m_videoDecode->release();
     m_audioDecode->release();
-    avformat_close_input(&m_AVFormatContext);
-    avformat_free_context(m_AVFormatContext);
-    m_AVFormatContext = nullptr;
+    if(m_AVFormatContext){
+        avformat_close_input(&m_AVFormatContext);
+        avformat_free_context(m_AVFormatContext);
+        m_AVFormatContext = nullptr;
+    }
 }
 
 void VideoDecode::release() {
+    LOG_E("release VideoDecode");
 //    avformat_network_deinit();
-
-    if(m_RGBAFrame != nullptr) {
-        av_frame_free(&m_RGBAFrame);
-        m_RGBAFrame = nullptr;
+    if(m_FrameBuffer != nullptr) {
+        av_free(m_FrameBuffer);
+        m_FrameBuffer = nullptr;
     }
 
-    if(m_FrameBuffer != nullptr) {
-        free(m_FrameBuffer);
-        m_FrameBuffer = nullptr;
+    if(m_RGBAFrame != nullptr) {
+        av_freep(m_RGBAFrame->data[0]);
+        av_frame_free(&m_RGBAFrame);
+        m_RGBAFrame = nullptr;
     }
 
     if(m_SwsContext != nullptr) {
@@ -497,20 +540,42 @@ void VideoDecode::release() {
     }
 
     if(m_AVCodecContext != nullptr) {
+        avcodec_free_context(&m_AVCodecContext);
+        m_AVCodecContext = nullptr;
+        m_AVCodec = nullptr;
+    }
+
+//    todo??释放了java层的surface也释放了??
+    if(m_NativeWindow)
+        ANativeWindow_release(m_NativeWindow);
+}
+
+void AudioDecode::release() {
+    LOG_E("release AudioDecode");
+    if(m_AVCodecContext != nullptr) {
         avcodec_close(m_AVCodecContext);
         avcodec_free_context(&m_AVCodecContext);
         m_AVCodecContext = nullptr;
         m_AVCodec = nullptr;
     }
 
-    //todo??释放了java层的surface也释放了??
-    if(m_NativeWindow)
-        ANativeWindow_release(m_NativeWindow);
-}
+    if(swr != nullptr) {
+        swr_free(&swr);
+        swr = nullptr;
+    }
 
-void AudioDecode::release() {
+    while (!frameQueue.empty()){
+        av_frame_free(&frameQueue.front());
+        frameQueue.pop();
+    }
+
+    while (!packetQueue.empty()){
+        av_packet_free(&packetQueue.front());
+        packetQueue.pop();
+    }
+
     audioPlayer->openPlayerDevice();
-    delete audioPlayer;
+
 }
 
 /**

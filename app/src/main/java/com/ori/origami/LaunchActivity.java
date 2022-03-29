@@ -141,7 +141,7 @@ public class LaunchActivity extends OriBaseActivity<ActivityLaunchBinding> {
         if(index == 1){
             if(nativeRtspPlay == null) {
                 nativeRtspPlay = new NativeRtspPlay(mViews.surface.getHolder().getSurface());
-                new Thread(() -> nativeRtspPlay.setUrl("http://61.128.208.26:6080/rtp/50010800491320000101_50010800491320000101.live.flv")).start();
+                new Thread(() -> nativeRtspPlay.setUrl("http://192.168.0.61:8000/www/ED3_Mura720.wmv")).start();
             }else {
                 nativeRtspPlay.release();
                 nativeRtspPlay = null;

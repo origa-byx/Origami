@@ -16,7 +16,6 @@
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
 #include <queue>
-#include <thread>
 
 #include "ori_audio.h"
 
@@ -64,20 +63,31 @@ class AudioDecode{
 private:
 public:
     bool * stop;
-    AVCodec* m_AVCodec;
+    AVCodec * m_AVCodec;
     //解码器context
     AVCodecContext* m_AVCodecContext;
+
+    SwrContext * swr;
 
     std::queue<AVPacket *> packetQueue;
     std::queue<AVFrame *> frameQueue;
 
+    uint8_t * buffer;
+
     AudioPlayer* audioPlayer;
+
+    int64_t outSampleRate;
+    int out_ch_layout = AV_CH_LAYOUT_STEREO;
+    AVSampleFormat out_sample_fmt;
+    int32_t out_channel_nb;
 
     bool findAndOpenDecoder(AVFormatContext &avFormatContext, uint32_t audioStreamIndex);
     AudioDecode(bool * stopPtr){
         stop = stopPtr;
         audioPlayer = new AudioPlayer();
-        audioPlayer->android_openAudioDevice(44100, 2);
+        outSampleRate = 44100;
+        out_sample_fmt = AV_SAMPLE_FMT_S16;
+        audioPlayer->android_openAudioDevice(outSampleRate, 2);
     }
 
     ~AudioDecode(){ release(); }
@@ -95,7 +105,7 @@ public:
     std::queue<AVFrame *> freeFrameQueue;
     bool stop = false;
 
-    AVPacket * get_mAVPacket();
+    void get_mAVPacket(AVPacket ** pack);
     AVFrame * get_mAVFrame();
 
     void loopVDecode();
@@ -114,11 +124,13 @@ public:
     void release();
 };
 
-void loopVideoDecode(OriDecode& oriDecode);
-void loopAudioDecode(OriDecode& oriDecode);
+void * loopVideoDecode(void * args);
+void * loopAudioDecode(void * args);
 
-void loopVideoRender(VideoDecode* videoDecode, std::queue<AVFrame *>& freeFrameQueue);
-void loopAudioPlay(AudioDecode* audioDecode, std::queue<AVFrame *>& freeFrameQueue);
+void * loopVideoRender(void * args);
+void * loopAudioPlay(void * args);
+
+int32_t getBuff2AudioPlay(AudioDecode* audioDecode, std::queue<AVFrame *>& freeFrameQueue);
 
 std::string jString2str(JNIEnv& env, jstring j_str);
 void getOriDecode(OriDecode** m_video, JNIEnv& env, jobject& thiz);
