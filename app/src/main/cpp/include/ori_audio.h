@@ -21,29 +21,24 @@ private:
     SLint32 currentPlayState = SL_PLAYSTATE_STOPPED;
     bool initOk = false;
 
-    SLObjectItf slObjectItf;
-    SLEngineItf slEngineItf;
+    SLObjectItf slObjectItf = nullptr;
+    SLEngineItf slEngineItf = nullptr;
 
-    SLObjectItf outputMixObject;
+    SLObjectItf outputMixObject = nullptr;
 
-    SLObjectItf bqPlayerObject;
-    SLPlayItf bqPlayerPlay;
-    SLAndroidSimpleBufferQueueItf bqPlayerBufferQueue;
+    SLObjectItf bqPlayerObject = nullptr;
+    SLPlayItf bqPlayerPlay = nullptr;
+    SLAndroidSimpleBufferQueueItf bqPlayerBufferQueue = nullptr;
 
-    SLObjectItf pitchObject;
-    SLPitchItf bqPitchEngine;
-    SLPlaybackRateItf bqPlayerRate;
-    SLPitchItf bqPlayerVolume;
+    SLPlaybackRateItf bqPlayerRate = nullptr;
+    SLPitchItf bqPlayerVolume = nullptr;
 
-    int inputDataCount;
     double time;
     //输出的声道数量
     uint32_t  outChannels;
     //采样率
     uint32_t  sampleRate;
 public:
-    //set at first
-//    void (*bqPlayerCallback) (SLAndroidSimpleBufferQueueItf bq, void *context);
 
     ~AudioPlayer();
 

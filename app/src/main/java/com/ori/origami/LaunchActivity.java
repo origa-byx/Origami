@@ -94,7 +94,7 @@ public class LaunchActivity extends OriBaseActivity<ActivityLaunchBinding> {
 //        }, 2000, 1000);
     }
 
-    @BClick(R.id.top)
+    @BClick(R.id.surface)
     public void top_c(){
         mViews.surface.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override

@@ -17,14 +17,15 @@ SLresult AudioPlayer::initPlayer(){
     if(slObjectItf && slEngineItf)
         return SL_RESULT_SUCCESS;
     SLresult ret;
-    ret = slCreateEngine(&slObjectItf, 0, nullptr,
+    SLEngineOption options[] = {SL_ENGINEOPTION_THREADSAFE, SL_BOOLEAN_TRUE};
+    ret = slCreateEngine(&slObjectItf, 0, options,
                          0, nullptr, nullptr);
     if(ret != SL_RESULT_SUCCESS) goto end;
 
     ret = (*slObjectItf)->Realize(slObjectItf, SL_BOOLEAN_FALSE);
     if(ret != SL_RESULT_SUCCESS) goto end;
 
-    ret = (*slObjectItf)->GetInterface(slObjectItf, nullptr, &slEngineItf);
+    ret = (*slObjectItf)->GetInterface(slObjectItf, SL_IID_ENGINE, &slEngineItf);
     if(ret != SL_RESULT_SUCCESS) goto end;
 
     end : return ret;
@@ -57,7 +58,7 @@ SLresult AudioPlayer::openPlayerDevice() {
             case 96000: sr  = SL_SAMPLINGRATE_96; break;
             case 192000: sr = SL_SAMPLINGRATE_192; break;
             default:
-                return -1;
+                sr *= 1000;
         }
         const SLInterfaceID ids[] = { SL_IID_VOLUME };
         const SLboolean req[] = { SL_BOOLEAN_FALSE };
@@ -71,7 +72,8 @@ SLresult AudioPlayer::openPlayerDevice() {
         else
             speakers = SL_SPEAKER_FRONT_CENTER;
         SLDataFormat_PCM  format_pcm = {
-                SL_DATAFORMAT_PCM, sr, SL_PCMSAMPLEFORMAT_FIXED_16,
+                SL_DATAFORMAT_PCM, channels,
+                sr, SL_PCMSAMPLEFORMAT_FIXED_16,
                 SL_PCMSAMPLEFORMAT_FIXED_16,
                 (SLuint32) speakers, SL_BYTEORDER_LITTLEENDIAN
         };
@@ -117,7 +119,7 @@ SLresult AudioPlayer::openPlayerDevice() {
     return SL_RESULT_SUCCESS;
 }
 
-SLresult AudioPlayer::startPlay(void (*bqPlayerCallback) (SLAndroidSimpleBufferQueueItf, void*), void* context){
+SLresult AudioPlayer::startPlay(slAndroidSimpleBufferQueueCallback bqPlayerCallback, void* context){
     //register callback on the buffer queue
     if(currentPlayState == SL_PLAYSTATE_PLAYING)
         return SL_RESULT_SUCCESS;
@@ -125,6 +127,8 @@ SLresult AudioPlayer::startPlay(void (*bqPlayerCallback) (SLAndroidSimpleBufferQ
     ret = (*bqPlayerBufferQueue)->RegisterCallback(bqPlayerBufferQueue, bqPlayerCallback, context);
     if(ret != SL_RESULT_SUCCESS) return ret;
     ret = setPlayState(SL_PLAYSTATE_PLAYING);
+    if(ret != SL_RESULT_SUCCESS) return ret;
+    bqPlayerCallback(bqPlayerBufferQueue, context);
     return ret;
 }
 
@@ -135,13 +139,13 @@ SLresult AudioPlayer::startPlay(void (*bqPlayerCallback) (SLAndroidSimpleBufferQ
  */
 SLresult AudioPlayer::setPlayState(SLuint32 state) {
     //set the play's state to playing
-    SLresult ret;
+    SLresult ret = -1;
     if(bqPlayerPlay){
         ret = (*bqPlayerPlay)->SetPlayState(bqPlayerPlay, state);
         if(ret == SL_RESULT_SUCCESS)
             currentPlayState = state;
     }
-    return -1;
+    return ret;
 }
 
 
@@ -199,7 +203,6 @@ SLresult AudioPlayer::android_openAudioDevice(uint32_t sample_rate, uint32_t out
         return SL_RESULT_SUCCESS;
     SLresult ret;
     sampleRate = sample_rate;
-    inputDataCount = 0;
     outChannels = out_channels;
     if((ret = initPlayer()) != SL_RESULT_SUCCESS
         || (ret = openPlayerDevice()) != SL_RESULT_SUCCESS)
