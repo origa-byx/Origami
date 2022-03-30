@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
@@ -72,6 +73,16 @@ public class LaunchActivity extends OriBaseActivity<ActivityLaunchBinding> {
 //            }
 //        });
 //    }
+
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if(keyCode == KeyEvent.KEYCODE_BACK){
+            top_c();
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
 
     @Override
     public void init(@Nullable Bundle savedInstanceState) {
