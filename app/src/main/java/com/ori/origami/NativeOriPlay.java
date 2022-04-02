@@ -13,7 +13,7 @@ import androidx.annotation.NonNull;
  * @date: {2021-10-21}
  * @info:
  **/
-public class NativeRtspPlay {
+public class NativeOriPlay {
 
     static {
         System.loadLibrary("ori_hyn");
@@ -23,13 +23,22 @@ public class NativeRtspPlay {
     @SuppressWarnings("unused")
     private long native_obj_ptr;
 
-    public NativeRtspPlay(Surface surface) {
-        setNativeWindow(surface);
+    public NativeOriPlay(Surface surface) {
+        setNativeWindow(surface, 30);
     }
 
-    private native void setNativeWindow(Surface surface);
+    /**
+     * 绑定将要渲染的 Surface
+     * @param surface surface
+     * @param av_max   解码，帧队列最大容量(越大内存消耗越大)
+     */
+    private native void setNativeWindow(Surface surface, int av_max);
 
-    public native void setUrl(String rtsp_url);
+    /**
+     * 将会自动播放
+     * @param url
+     */
+    public native void setUrl(String url);
 
     public native boolean isPlay();
 

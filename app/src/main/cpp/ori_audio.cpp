@@ -124,8 +124,10 @@ SLresult AudioPlayer::startPlay(slAndroidSimpleBufferQueueCallback bqPlayerCallb
     if(currentPlayState == SL_PLAYSTATE_PLAYING)
         return SL_RESULT_SUCCESS;
     SLresult ret;
-    ret = (*bqPlayerBufferQueue)->RegisterCallback(bqPlayerBufferQueue, bqPlayerCallback, context);
-    if(ret != SL_RESULT_SUCCESS) return ret;
+    if(currentPlayState != SL_PLAYSTATE_PAUSED){
+        ret = (*bqPlayerBufferQueue)->RegisterCallback(bqPlayerBufferQueue, bqPlayerCallback, context);
+        if(ret != SL_RESULT_SUCCESS) return ret;
+    }
     ret = setPlayState(SL_PLAYSTATE_PLAYING);
     if(ret != SL_RESULT_SUCCESS) return ret;
     bqPlayerCallback(bqPlayerBufferQueue, context);

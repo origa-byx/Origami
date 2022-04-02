@@ -16,6 +16,7 @@
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
 #include <queue>
+#include "time.h"
 
 #include "ori_queue.h"
 #include "ori_audio.h"
@@ -26,10 +27,12 @@ public:
     bool * stop;
     //native_window
     ANativeWindow* m_NativeWindow = nullptr;
-
+    int32_t fps;
     AVCodec* m_AVCodec = nullptr;
+    double current_clock = 0;
+    AVRational time_base;
     //解码器context
-    AVCodecContext* m_AVCodecContext = nullptr;
+    AVCodecContext * m_AVCodecContext = nullptr;
     OriQueue<AVPacket *> * packetQueue = nullptr;
     OriQueue<AVFrame *> * frameQueue = nullptr;
     //Rgb帧
@@ -46,10 +49,10 @@ public:
     int32_t m_targetWidth, m_targetHeight;//目标转换大小
     int32_t m_offsetWidth = 0, m_offsetHeight = 0;//x, y偏移
 
-    VideoDecode(bool * stopPtr){
+    VideoDecode(bool * stopPtr, int av_max){
         stop = stopPtr;
-        packetQueue = new OriQueue<AVPacket *>(50);
-        frameQueue = new OriQueue<AVFrame *>(50);
+        packetQueue = new OriQueue<AVPacket *>(stopPtr, av_max);
+        frameQueue = new OriQueue<AVFrame *>(stopPtr, av_max);
     }
 
     void yuv2rgbFrame_init();
@@ -74,8 +77,10 @@ public:
     //解码器context
     AVCodecContext * m_AVCodecContext = nullptr;
 
+    AVRational time_base;
     SwrContext * swr = nullptr;
-
+    double current_clock = 0;
+    int64_t pts = 0;
     OriQueue<AVPacket *> * packetQueue = nullptr;
     OriQueue<AVFrame *> * frameQueue = nullptr;
 
@@ -90,11 +95,11 @@ public:
     int32_t out_channel_nb;
 
     bool findAndOpenDecoder(AVFormatContext &avFormatContext, uint32_t audioStreamIndex);
-    AudioDecode(bool * stopPtr){
+    AudioDecode(bool * stopPtr, int av_max){
         stop = stopPtr;
         audioPlayer = new AudioPlayer();
-        packetQueue = new OriQueue<AVPacket *>(50);
-        frameQueue = new OriQueue<AVFrame *>(50);
+        packetQueue = new OriQueue<AVPacket *>(stopPtr, av_max);
+        frameQueue = new OriQueue<AVFrame *>(stopPtr, av_max);
         out_sample_fmt = AV_SAMPLE_FMT_S16;
     }
 
@@ -111,39 +116,57 @@ public:
 
 class OriDecode{
 private:
+    std::mutex * mMutex = nullptr;
+
+    const int waitIndex = 5;
+    int safeRelease = 0;
+    void (*releaseCallBack)(OriDecode *);
+
     AVFormatContext * m_AVFormatContext = nullptr;
+    //视频通道
+    uint32_t videoStreamIndex = -1;
+    //音频通道
+    uint32_t audioStreamIndex = -1;
+    bool decodeV = false, decodeA = false;
 public:
+    //0 really 1 play 2 stop
+    int status = 0;
+
     VideoDecode * m_videoDecode = nullptr;
     AudioDecode * m_audioDecode = nullptr;
-    OriQueue<AVPacket *> * freePacketQueue = nullptr;
-    OriQueue<AVFrame *> * freeFrameQueue = nullptr;
     bool stop = false;
 
-    void get_mAVPacket(AVPacket ** pack) const;
-    void get_mAVFrame(AVFrame ** freeAvFrame) const;
+    void setReleaseCallBack(void (*releaseCallBack)(OriDecode*));
+
+    void canSafeReleaseCall(const std::string&);
 
     void loopVDecode();
     void loopADecode();
 
-    OriDecode(){
-        m_videoDecode = new VideoDecode(&stop);
-        m_audioDecode = new AudioDecode(&stop);
-        freePacketQueue = new OriQueue<AVPacket *>(50);
-        freeFrameQueue = new OriQueue<AVFrame *>(50);
+    OriDecode(int32_t av_max){
+        mMutex = new std::mutex;
+        m_videoDecode = new VideoDecode(&stop, av_max);
+        m_audioDecode = new AudioDecode(&stop, av_max);
     };
 
     ~OriDecode(){
-        release();
-        delete m_videoDecode;
-        delete m_audioDecode;
-        delete freePacketQueue;
-        delete freeFrameQueue;
+        delete mMutex;
     }
 
-    void decodeUrl(const std::string& m_Url);
+    void decodeUrl(const std::string& m_Url, bool autoPlay);
+    void startPlay();
     void stopPlay();
     void release();
 };
+
+struct decodeParam{
+    OriDecode * oriDecode;
+    std::string url;
+    bool autoPlay;
+};
+
+void * openDecodeUrl(void * args);
+void * startPlayAV(void * args);
 
 void * loopVideoDecode(void * args);
 void * loopAudioDecode(void * args);
@@ -151,7 +174,7 @@ void * loopAudioDecode(void * args);
 void * loopVideoRender(void * args);
 void * loopAudioPlay(void * args);
 
-int32_t getBuff2AudioPlay(AudioDecode* audioDecode, OriQueue<AVFrame *>& freeFrameQueue);
+int32_t getBuff2AudioPlay(OriDecode* oriDecode);
 
 std::string jString2str(JNIEnv& env, jstring j_str);
 void getOriDecode(OriDecode** m_video, JNIEnv& env, jobject& thiz);

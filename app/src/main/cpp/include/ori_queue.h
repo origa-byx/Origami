@@ -21,12 +21,15 @@
 template<typename T>
 class OriQueue{
 private:
+    bool* stopFlag;
+
     std::mutex mMutex;
     std::condition_variable cVariable;
-    int maxSize = 30;
+    int maxSize;
     std::queue<T> mQueue;
 public:
-    OriQueue(int max = 30){
+    OriQueue(bool * m_stopFlag, int max = 100){
+        stopFlag = m_stopFlag;
         maxSize = max;
     }
 
@@ -41,27 +44,38 @@ public:
         cVariable.notify_all();
     }
 
-    void popFirst(T * out_t){
+    int popFirst(T * out_t){
         std::unique_lock<std::mutex> mLock(mMutex);
-        while (mQueue.empty())
+        while (mQueue.empty() && !*stopFlag){
             cVariable.wait(mLock);
+        }
+        if(*stopFlag)
+            return -1;
         *out_t = mQueue.front();
         mQueue.pop();
         cVariable.notify_all();
+        return 0;
     }
+
     void push(T in_t){
         std::unique_lock<std::mutex> mLock(mMutex);
-        while (mQueue.size() >= maxSize)
+        while (mQueue.size() >= maxSize && !*stopFlag){
             cVariable.wait(mLock);
+        }
         mQueue.push(in_t);
         cVariable.notify_all();
     }
+
     void clear(void (*release)(T)){
         std::unique_lock<std::mutex> mLock(mMutex);
         while (!mQueue.empty()){
             release(mQueue.front());
             mQueue.pop();
         }
+    }
+
+    void notifyAll(){
+        cVariable.notify_all();
     }
 
 };
