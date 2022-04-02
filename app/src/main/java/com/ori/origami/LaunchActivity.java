@@ -160,7 +160,6 @@ public class LaunchActivity extends OriBaseActivity<ActivityLaunchBinding> {
 //                String url = "rtsp://admin:a1234567@192.168.0.112:554/h264/ch1/sub/av_stream";
 //                    String url = "http://192.168.0.61:8000/www/ED3_Mura720.wmv";
                 nativeOriPlay.setUrl(url);
-
             } else {
                 nativeOriPlay.release();
                 nativeOriPlay = null;
