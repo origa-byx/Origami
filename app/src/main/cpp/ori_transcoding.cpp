@@ -145,7 +145,7 @@ void Transcoding::init() {
                              AV_SAMPLE_FMT_FLTP,
                              m_AudioCodecContext->sample_rate,//输出格式
                              m_AudioCodecContext->channel_layout,
-                             AV_SAMPLE_FMT_S16,
+                             m_AudioCodecContext->sample_fmt,
                              m_AudioCodecContext->sample_rate, 0,
                                          nullptr);//输入格式
     if (!asc) {

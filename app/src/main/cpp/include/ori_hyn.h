@@ -118,7 +118,7 @@ class OriDecode{
 private:
     std::mutex * mMutex = nullptr;
 
-    const int waitIndex = 5;
+    int waitIndex = 1;
     int safeRelease = 0;
     void (*releaseCallBack)(OriDecode *);
 

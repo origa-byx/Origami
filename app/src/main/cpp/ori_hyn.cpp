@@ -234,6 +234,7 @@ void OriDecode::startPlay() {
     if(status == 1) return;
     safeRelease = 0;
     status = 1;
+    waitIndex = 1;
     stop = false;
     releaseCallBack = nullptr;
     LOG_E("解码开始...");
@@ -249,7 +250,7 @@ void OriDecode::startPlay() {
         }
         if(freeAvPacket->stream_index == videoStreamIndex){
             m_videoDecode->packetQueue->push(freeAvPacket);
-        }else if(freeAvPacket->stream_index == audioStreamIndex){
+        } else if(freeAvPacket->stream_index == audioStreamIndex){
             m_audioDecode->packetQueue->push(freeAvPacket);
         } else {
             av_packet_free(&freeAvPacket);
@@ -349,12 +350,12 @@ void VideoDecode::yuv2rgbFrame_init(){
     m_VideoWidth = m_AVCodecContext->width;
     m_VideoHeight = m_AVCodecContext->height;
     initTargetWH();
-    LOG_W("m_VideoWidth: %d", m_VideoWidth);
-    LOG_W("m_VideoHeight: %d", m_VideoHeight);
-    LOG_W("m_targetWidth: %d", m_targetWidth);
-    LOG_W("m_targetHeight: %d", m_targetHeight);
-    LOG_W("m_offsetWidth: %d", m_offsetWidth);
-    LOG_W("m_offsetHeight: %d", m_offsetHeight);
+//    LOG_W("m_VideoWidth: %d", m_VideoWidth);
+//    LOG_W("m_VideoHeight: %d", m_VideoHeight);
+//    LOG_W("m_targetWidth: %d", m_targetWidth);
+//    LOG_W("m_targetHeight: %d", m_targetHeight);
+//    LOG_W("m_offsetWidth: %d", m_offsetWidth);
+//    LOG_W("m_offsetHeight: %d", m_offsetHeight);
     m_RGBAFrame = av_frame_alloc();
     //计算 Buffer 的大小
     int bufferSize = av_image_get_buffer_size(AV_PIX_FMT_RGBA, m_targetWidth, m_targetHeight, 1);
@@ -371,6 +372,7 @@ void VideoDecode::yuv2rgbFrame_init(){
 
 void OriDecode::loopVDecode() {
     if(!decodeV) return;
+    waitIndex += 2;
     pthread_t loopV_d, loopRender_d;
     pthread_create(&loopV_d, nullptr, loopVideoDecode, this);
     pthread_create(&loopRender_d, nullptr, loopVideoRender, this);
@@ -379,6 +381,7 @@ void OriDecode::loopVDecode() {
 }
 void OriDecode::loopADecode() {
     if(!decodeA) return;
+    waitIndex += 2;
     pthread_t loopA_d, loopAudio_d;
     pthread_create(&loopA_d, nullptr, loopAudioDecode, this);
     pthread_create(&loopAudio_d, nullptr, loopAudioPlay, this);
@@ -409,6 +412,12 @@ void * loopVideoRender(void * args){
         AVFrame * m_Frame;
         if(videoDecode->frameQueue->popFirst(&m_Frame) != 0)
             break;
+//        if(true){
+//            LOG_E("free render");
+//            av_frame_free(&m_Frame);
+//            av_usleep(330000);
+//            continue;
+//        }
         if(seekCurrentFrame){
             seekCurrentFrame = false;
             av_frame_free(&m_Frame);
@@ -437,7 +446,7 @@ void * loopVideoRender(void * args){
         }
         //解锁当前 Window ，渲染缓冲区数据
         ANativeWindow_unlockAndPost(videoDecode->m_NativeWindow);
-
+//        av_frame_unref(videoDecode->m_RGBAFrame);
         // m_Frame->pts 是在重编码阶段赋值的，同步需要估计解码的耗时
         //注意此处的time_base来自于AVStream, AVCodecContext的time_base是错误的，分子0好像默认了60帧速率去计算时间
         double current_clock = m_Frame->pts * av_q2d(oriDecode->m_videoDecode->time_base);
@@ -517,9 +526,15 @@ void * loopVideoDecode(void * args){
         if(videoDecode->packetQueue->popFirst(&m_Packet) != 0)
             break;
         if (avcodec_send_packet(videoDecode->m_AVCodecContext, m_Packet) == 0) {
-            AVFrame * m_Frame = av_frame_alloc();
-            if (avcodec_receive_frame(videoDecode->m_AVCodecContext, m_Frame) == 0) {
-                videoDecode->frameQueue->push(m_Frame);
+            for(;;){
+                AVFrame * m_Frame = av_frame_alloc();
+                if (avcodec_receive_frame(videoDecode->m_AVCodecContext, m_Frame) == 0) {
+//                    videoDecode->frameQueue->push(m_Frame);
+                    av_frame_free(&m_Frame);
+                } else{
+                    av_frame_free(&m_Frame);
+                    break;
+                }
             }
         }
         av_packet_free(&m_Packet);
@@ -541,9 +556,14 @@ void * loopAudioDecode(void * args){
         if(audioDecode->packetQueue->popFirst(&m_Packet) != 0)
             break;
         if (avcodec_send_packet(audioDecode->m_AVCodecContext, m_Packet) == 0) {
-            AVFrame * m_Frame = av_frame_alloc();
-            if (avcodec_receive_frame(audioDecode->m_AVCodecContext, m_Frame) == 0) {
-                audioDecode->frameQueue->push(m_Frame);
+            for(;;){
+                AVFrame * m_Frame = av_frame_alloc();
+                if (avcodec_receive_frame(audioDecode->m_AVCodecContext, m_Frame) == 0) {
+                    audioDecode->frameQueue->push(m_Frame);
+                }else{
+                    av_frame_free(&m_Frame);
+                    break;
+                }
             }
         }
         av_packet_free(&m_Packet);
@@ -565,14 +585,14 @@ void OriDecode::stopPlay() {
 void OriDecode::release() {
     setReleaseCallBack([](OriDecode * oriDecode){
         LOG_E("release by callback");
-        av_usleep(5000);//deng dai 5ms
-        if(oriDecode->m_AVFormatContext){
-            avformat_close_input(&oriDecode->m_AVFormatContext);
-            avformat_free_context(oriDecode->m_AVFormatContext);
-            oriDecode->m_AVFormatContext = nullptr;
-        }
+        av_usleep(50000);//deng dai 50ms
         delete oriDecode->m_videoDecode;
         delete oriDecode->m_audioDecode;
+        if(oriDecode->m_AVFormatContext){
+            avformat_close_input(&oriDecode->m_AVFormatContext);
+//            avformat_free_context(oriDecode->m_AVFormatContext);
+            oriDecode->m_AVFormatContext = nullptr;
+        }
         delete oriDecode;
         LOG_E("release finish");
     });
@@ -604,8 +624,8 @@ void VideoDecode::release() {
         av_frame_free(&item);
     });
 
-    packetQueue->clear([](AVPacket* item){
-        av_packet_free(&item);
+    packetQueue->clear([](AVPacket* packet){
+        av_packet_free(&packet);
     });
 
     if(m_RGBAFrame) {
@@ -617,15 +637,15 @@ void VideoDecode::release() {
         m_SwsContext = nullptr;
     }
 
+    if(m_FrameBuffer){
+        av_freep(&m_FrameBuffer);
+    }
+
     if(m_AVCodecContext) {
-        avcodec_close(m_AVCodecContext);
+//        avcodec_close(m_AVCodecContext);
         avcodec_free_context(&m_AVCodecContext);
         m_AVCodecContext = nullptr;
         m_AVCodec = nullptr;
-    }
-
-    if(m_FrameBuffer){
-        av_freep(&m_FrameBuffer);
     }
 
     if(m_NativeWindow)
@@ -643,13 +663,6 @@ void AudioDecode::release() {
         av_packet_free(&packet);
     });
 
-    if(m_AVCodecContext) {
-        avcodec_close(m_AVCodecContext);
-        avcodec_free_context(&m_AVCodecContext);
-        m_AVCodecContext = nullptr;
-        m_AVCodec = nullptr;
-    }
-
     if(swr) {
         swr_free(&swr);
         swr = nullptr;
@@ -657,6 +670,13 @@ void AudioDecode::release() {
 
     if(buffer){
         av_freep(&buffer);
+    }
+
+    if(m_AVCodecContext) {
+//        avcodec_close(m_AVCodecContext);
+        avcodec_free_context(&m_AVCodecContext);
+        m_AVCodecContext = nullptr;
+        m_AVCodec = nullptr;
     }
 
     audioPlayer->openSLDestroy();

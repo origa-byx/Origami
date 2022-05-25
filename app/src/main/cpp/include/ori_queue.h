@@ -69,8 +69,9 @@ public:
     void clear(void (*release)(T)){
         std::unique_lock<std::mutex> mLock(mMutex);
         while (!mQueue.empty()){
-            release(mQueue.front());
+            T item = mQueue.front();
             mQueue.pop();
+            release(item);
         }
     }
 
