@@ -11,6 +11,15 @@ set(LOCAL_LDLIBS  "-llog -lGLESv1_CM -ldl -lz")
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
+add_library( # Sets the name of the library.
+        oricv
+
+        # Sets the library as a shared library.
+        SHARED
+
+        # Provides a relative path to your source file(s).
+        src/main/cpp/ori_cv.cpp)
+
 
 add_library( # Sets the name of the library.
         origami
@@ -49,6 +58,14 @@ add_library( # Sets the name of the library.
 
         # Provides a relative path to your source file(s).
         src/main/cpp/ori_transcoding.cpp)
+add_library( # Sets the name of the library.
+        ori_mp
+
+        # Sets the library as a shared library.
+        SHARED
+
+        # Provides a relative path to your source file(s).
+        src/main/cpp/ori_mp.cpp)
 #动态方式加载 STATIC：表示静态的.a的库 SHARED：表示.so的库。
 add_library(qrdatadecode SHARED IMPORTED)
 
@@ -58,6 +75,7 @@ add_library(avformat SHARED IMPORTED)
 add_library(avutil SHARED IMPORTED)
 add_library(swresample SHARED IMPORTED)
 add_library(swscale SHARED IMPORTED)
+add_library(opencv_java4 SHARED IMPORTED)
 
 #设置要连接的so的相对路径 ${CMAKE_SOURCE_DIR}：表示CMake.txt的当前文件夹路径 ${ANDROID_ABI}：编译时会自动根据CPU架构去选择相应的库
 set_target_properties(qrdatadecode PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libqrdatadecode.so)
@@ -67,11 +85,14 @@ set_target_properties(avformat PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/
 set_target_properties(avutil PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/libs/${ANDROID_ABI}/libavutil.so)
 set_target_properties(swresample PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/libs/${ANDROID_ABI}/libswresample.so)
 set_target_properties(swscale PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/libs/${ANDROID_ABI}/libswscale.so)
+set_target_properties(opencv_java4 PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/libs/${ANDROID_ABI}/libopencv_java4.so)
+
 
 #添加第三方头文件
 target_include_directories(origami PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/include)
 target_include_directories(ori_hyn PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/include)
 target_include_directories(ori_transcoding PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/include)
+target_include_directories(oricv PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/include)
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
 # default, you only need to specify the name of the public NDK library
@@ -124,6 +145,20 @@ target_link_libraries( # Specifies the target library.
         ${OpenSLES-lib})
 
 target_link_libraries( # Specifies the target library.
+        ori_mp
+        android
+
+        avcodec
+        avfilter
+        avformat
+        avutil
+        swresample
+        swscale
+        # Links the target library to the log library
+        # included in the NDK.
+        ${log-lib})
+
+target_link_libraries( # Specifies the target library.
         ori_transcoding
         android
 
@@ -133,6 +168,16 @@ target_link_libraries( # Specifies the target library.
         avutil
         swresample
         swscale
+        # Links the target library to the log library
+        # included in the NDK.
+        ${log-lib})
+
+target_link_libraries( # Specifies the target library.
+        oricv
+        android
+        jnigraphics
+
+        opencv_java4
         # Links the target library to the log library
         # included in the NDK.
         ${log-lib})

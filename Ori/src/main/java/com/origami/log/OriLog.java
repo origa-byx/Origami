@@ -5,6 +5,8 @@ import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 import com.origami.utils.Ori;
 
 import java.io.File;
@@ -29,6 +31,8 @@ public class OriLog implements Runnable {
     private final String path;
     private String dateTime = "0000-00-00";
     private int index = 0;
+
+    private LogBefore<String, String> logBefore;
 
     @SuppressLint("SimpleDateFormat")
     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
@@ -56,9 +60,15 @@ public class OriLog implements Runnable {
         this.path = Ori.getSaveFilePath(context) + "log";
     }
 
+    public void setLogBefore(LogBefore<String, String>  logBefore) {
+        this.logBefore = logBefore;
+    }
+
     public void log_print(OriLogBean bean){
         if(bean == null){ return; }
         if(debug && !TextUtils.isEmpty(bean.msg)){ Log.e(bean.tag, bean.msg); }
+        if(logBefore != null && !TextUtils.isEmpty(bean.msg) && !TextUtils.isEmpty(bean.tag))
+            logBefore.invoke(bean.tag, bean.msg);
         logQueue.offer(bean);
         if(lock_flag.get()){
             synchronized (lock){
@@ -153,13 +163,20 @@ public class OriLog implements Runnable {
 
     private boolean createIfNotExists(File file) throws IOException {
         if (!file.exists()) {
-            if(file.getParentFile() != null) {
-                file.getParentFile().mkdirs();
-            }
-            file.createNewFile();
+            File parentFile = file.getParentFile();
+            if(parentFile == null || parentFile.mkdirs())
+                Log.d("OriLog", "parentFile mkdirs false");
+            if (file.createNewFile())
+                Log.d("OriLog", "file createNewFile false");
             return true;
         }
         return false;
+    }
+
+    public interface LogBefore<A, B>{
+
+        void invoke(@NonNull A tag, @NonNull B msg);
+
     }
 
 }

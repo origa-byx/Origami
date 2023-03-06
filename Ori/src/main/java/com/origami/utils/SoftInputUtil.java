@@ -46,11 +46,12 @@ public class SoftInputUtil {
         void onChanged(boolean isSoftInputShow, int softInputHeight, int viewOffset);
     }
 
-    public void attachSoftInput(View moveView, final View... anyView){
-        attachSoftInput(moveView, moveView.getRootView(), anyView);
+    public SoftInputUtil attachSoftInput(View moveView){
+        attachSoftInput(moveView, moveView.getRootView());
+        return this;
     }
 
-    public void attachSoftInput(View moveView, View rootView, final View... anyView) {
+    public SoftInputUtil attachSoftInput(View moveView, View rootView) {
         attachSoftInput(rootView, (isSoftInputShow, softInputHeight, viewOffset) -> {
             if(isSoftInputShow && viewOffset > 0) {
                 moveView.setTranslationY(-viewOffset);
@@ -58,15 +59,16 @@ public class SoftInputUtil {
                 moveView.setTranslationY(0);
             }
         });
-        addAttachView(anyView);
+        return this;
     }
 
-    public void addAttachView(final View... anyView){
+    public SoftInputUtil addAttachView(final View... anyView){
         if(anyView != null && anyView.length > 0){
             for (View view : anyView) {
                 view.setOnFocusChangeListener(sFocusChangeListener);
             }
         }
+        return this;
     }
 
     public void setMyListener(ISoftInputChanged listener) {

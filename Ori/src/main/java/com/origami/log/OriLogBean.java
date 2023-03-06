@@ -2,7 +2,7 @@ package com.origami.log;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
-import android.graphics.Color;
+import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
 
@@ -57,12 +57,13 @@ public class OriLogBean {
     private OriLogBean(String tag, String level, String msg, Throwable throwable, Bitmap... bitmap) {
         this.level = level;
         this.txt = toSafeString(msg) + getBitmapLogString(bitmap);
-        this.msg = msg;
-        this.tag = tag == null? "NULL": tag;
+        this.msg = msg == null? "null" : msg;
+        this.tag = tag == null? "NULL" : tag;
         this.throwable = throwable;
     }
 
     private static String toSafeString(String msg){
+        if(TextUtils.isEmpty(msg)) return "";
         for (int i = 0; i < safeArr.length; i++) {
             msg = msg.replaceAll(safeArr[i], replaceArr[i]);
         }

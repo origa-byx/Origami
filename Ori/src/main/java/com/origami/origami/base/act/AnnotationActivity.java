@@ -19,6 +19,8 @@ import com.origami.origami.base.annotation.BContentView;
 import com.origami.origami.base.annotation.BView;
 import com.origami.origami.base.bus.OriEvent;
 import com.origami.origami.base.callback.RequestPermissionNext;
+import com.origami.origami.base.utils.BaseTitleView;
+import com.origami.origami.base.utils.TitleAutoActivity;
 import com.origami.utils.StatusUtils;
 
 import java.lang.reflect.Field;
@@ -33,13 +35,17 @@ import java.lang.reflect.Modifier;
  * @see BContentView
  * @see BView
  * @see BClick
+ * @see com.origami.origami.base.utils.Title
  **/
-public abstract class AnnotationActivity extends AppCompatActivity implements View.OnClickListener {
+public abstract class AnnotationActivity extends AppCompatActivity implements View.OnClickListener,
+        TitleAutoActivity {
 
     protected final static int per_requestCode = 1028;
     //点击事件集合
     protected final SparseArray<Method> methodSparseArray = new SparseArray<>();
 
+    private BaseTitleView mTitleView;
+    private boolean busEventFlag = false;
     private RequestPermissionNext next;
 
     public abstract void init(@Nullable Bundle savedInstanceState);
@@ -75,6 +81,8 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
         BContentView contentView = getClass().getAnnotation(BContentView.class);
         if(contentView != null){
             initContentView(contentView.value());
+            if(busEventFlag = contentView.oriEventBus())
+                OriEvent.bindEvent(this);
         }else {
             setContentView(getLayout());
             setStatusBar();
@@ -82,7 +90,6 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
             AnnotationActivityManager.addActivity(this);
             return;
         }
-        OriEvent.bindEvent(this);
         Method[] methods = getClass().getDeclaredMethods();
         for (Method method : methods) {
             BClick bindClickListener = method.getAnnotation(BClick.class);
@@ -161,6 +168,14 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
      */
     protected void setStatusBar(){
         StatusUtils.setImmerseStatus(this);
+        mTitleView = initStatusAndTitleBar(this);
+    }
+
+    public BaseTitleView getTitleView() {
+        if(mTitleView == null)
+            throw new IllegalStateException("mTitleView is null, " +
+                    "you may be missed @Title at your Activity[ " + getClass().getSimpleName() + " ]");
+        return mTitleView;
     }
 
     @Override
@@ -188,7 +203,8 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        OriEvent.unbindByBindObj(this);
+        if(busEventFlag)
+            OriEvent.unbindByBindObj(this);
         AnnotationActivityManager.removeActivity(this);
     }
 

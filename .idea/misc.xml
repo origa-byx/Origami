@@ -7,10 +7,15 @@
         <entry key="..\:/Android/StudioProjects/Origami/Ori/src/main/res/drawable/_gray_4r_8dp.xml" value="0.3764102564102564" />
         <entry key="..\:/Android/StudioProjects/Origami/Ori/src/main/res/drawable/_ori_back_blue_per.xml" value="0.3764102564102564" />
         <entry key="..\:/Android/StudioProjects/Origami/Ori/src/main/res/drawable/_white_4r_8dp_borb.xml" value="0.35462962962962963" />
+        <entry key="..\:/Android/StudioProjects/Origami/Ori/src/main/res/drawable/ori_back_loading.xml" value="0.33796296296296297" />
+        <entry key="..\:/Android/StudioProjects/Origami/Ori/src/main/res/drawable/ori_back_title_bar.xml" value="0.33796296296296297" />
         <entry key="..\:/Android/StudioProjects/Origami/Ori/src/main/res/layout/_base_show_makesure.xml" value="0.31203703703703706" />
         <entry key="..\:/Android/StudioProjects/Origami/Ori/src/main/res/layout/_base_sys_toast.xml" value="0.3605128205128205" />
+        <entry key="..\:/Android/StudioProjects/Origami/Ori/src/main/res/layout/_view_loading.xml" value="0.3614583333333333" />
         <entry key="..\:/Android/StudioProjects/Origami/Ori/src/main/res/layout/activity_ori_image.xml" value="0.26510416666666664" />
         <entry key="..\:/Android/StudioProjects/Origami/Ori/src/main/res/layout/activity_ori_select_image.xml" value="0.3416666666666667" />
+        <entry key="..\:/Android/StudioProjects/Origami/Ori/src/main/res/layout/ori_view_title_bar.xml" value="0.3614583333333333" />
+        <entry key="..\:/Android/StudioProjects/Origami/app/src/main/res/layout/act_same_view_test.xml" value="0.36614583333333334" />
         <entry key="..\:/Android/StudioProjects/Origami/app/src/main/res/layout/activity_launch.xml" value="0.2713541666666667" />
         <entry key="..\:/Android/StudioProjects/Origami/app/src/main/res/layout/activity_test.xml" value="0.2713541666666667" />
       </map>

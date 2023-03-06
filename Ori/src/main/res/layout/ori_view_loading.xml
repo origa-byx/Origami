@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data></data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:background="@drawable/ori_back_loading">
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/vl_loading"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingHorizontal="25dp"
+            android:layout_marginBottom="25dp"
+            android:tint="@color/_ori_white"
+            android:src="@mipmap/ori_loading"
+            android:scaleType="fitCenter" />
+
+        <TextView
+            android:id="@+id/vl_text"
+            android:layout_width="match_parent"
+            android:layout_height="30dp"
+            android:textSize="12sp"
+            android:maxLines="1"
+            android:paddingHorizontal="10dp"
+            android:ellipsize="end"
+            android:text="loading..."
+            android:gravity="center"
+            android:textColor="@color/_ori_white"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>
