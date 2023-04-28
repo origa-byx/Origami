@@ -16,7 +16,7 @@ import java.lang.reflect.InvocationTargetException;
  * @info:
  *
  **/
-public class Db extends SQLiteOpenHelper {
+class Db extends SQLiteOpenHelper {
 
     public static final String TAG = "Db";
 
@@ -38,14 +38,6 @@ public class Db extends SQLiteOpenHelper {
             + "endTime varchar(255) default \"\","
             + "content text default \"\","
             + "status integer default 0)";
-
-
-    private static Db DBHelper;
-
-    public static void init(Db context) {
-        if(DBHelper != null){ return; }
-        DBHelper = context;
-    }
 
     public Db(@Nullable Context context) {
         super(context, DB_MANE, null, 1);
@@ -78,32 +70,5 @@ public class Db extends SQLiteOpenHelper {
     public static void closeDb(SQLiteOpenHelper db) {
         db.getWritableDatabase().close();
     }
-
-    /**
-     * 方法1：检查某表列是否存在
-     *
-     * @param db         database
-     * @param tableName  表名
-     * @param columnName 列名
-     * @return true已存在，false不存在
-     */
-    public static boolean checkColumnExist(SQLiteDatabase db, String tableName, String columnName) {
-        boolean result = false;
-        Cursor cursor = null;
-        try {
-            //查询一行
-            cursor = db.rawQuery("SELECT * FROM " + tableName + " LIMIT 0"
-                    , null);
-            result = cursor != null && cursor.getColumnIndex(columnName) != -1;
-        } catch (Exception e) {
-            Log.e(TAG, "checkColumnExists..." + e.getMessage());
-        } finally {
-            if (null != cursor && !cursor.isClosed()) {
-                cursor.close();
-            }
-        }
-        return result;
-    }
-
 
 }

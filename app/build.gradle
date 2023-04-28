@@ -69,7 +69,7 @@ android {
     //设置打包时  包名
     android.applicationVariants.all { variant ->
         variant.outputs.all {
-            outputFileName = "app_${defaultConfig.versionName}_hostregister.apk"
+            outputFileName = "app_${defaultConfig.versionName}.apk"
         }
     }
     dataBinding{ enabled=true }

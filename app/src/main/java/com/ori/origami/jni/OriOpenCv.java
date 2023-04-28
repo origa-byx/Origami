@@ -5,6 +5,7 @@ import android.util.Log;
 
 import androidx.core.util.Consumer;
 
+
 /**
  * @by: origami
  * @date: {2023/2/24}
@@ -37,7 +38,7 @@ public class OriOpenCv {
         System.loadLibrary("oricv");
     }
 
-    public native void doCv(Bitmap bitmap);
+    public native void doCv(Bitmap bitmap, double sc);
 
     public void bitmapChange(int cz_name){
         cz_change_run.run(cz_name, bitmap);

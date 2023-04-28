@@ -68,9 +68,7 @@ public:
     void write_data(int8_t * buffer);
     void save_file();
 
-    ~ori_mp(){
-
-    }
+    ~ori_mp(){}
 };
 
 

@@ -99,7 +99,7 @@ public class ActSameViewTest extends OriBaseActivity<ActSameViewTestBinding> {
                         e.printStackTrace();
                     }
                 }, b-> runOnUiThread(()-> mViews.sameLayout.setImageBitmap(b)));
-                oriOpenCv.doCv(bitmap);
+                oriOpenCv.doCv(bitmap, 0.5);
             }).start();
         }
     }

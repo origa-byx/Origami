@@ -11,7 +11,6 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/imgproc/types_c.h"
 #include "time.h"
-
 #define TAG "jni_ori_cv" // 这个是自定义的LOG的标识
 #define LOG_D(...) __android_log_print(ANDROID_LOG_DEBUG, TAG, __VA_ARGS__)
 #define LOG_I(...) __android_log_print(ANDROID_LOG_INFO,TAG ,__VA_ARGS__)
@@ -57,7 +56,7 @@ extern "C" {
     }
 
     JNIEXPORT void JNICALL
-    Java_com_ori_origami_jni_OriOpenCv_doCv(JNIEnv *env, jobject oriOpenCv, jobject bitmap) {
+    Java_com_ori_origami_jni_OriOpenCv_doCv(JNIEnv *env, jobject oriOpenCv, jobject bitmap, jdouble sc) {
         AndroidBitmapInfo info;
         jclass jc = env->FindClass("com/ori/origami/jni/OriOpenCv");
         jmethodID me = env->GetMethodID(jc, "doCvNext", "(IIII)V");
@@ -74,6 +73,7 @@ extern "C" {
             cv::cvtColor(tmp, mat, CV_RGBA2BGR565);
         }
         AndroidBitmap_unlockPixels(env, bitmap);
+        cv::resize(mat, mat, cv::Size(0, 0), sc, sc);
         cv::cvtColor(mat, mat, cv::COLOR_BGR2GRAY);
 //        mat2Bitmap(env, mat, bitmap, true);
 //        env->CallVoidMethod(oriOpenCv, me_bitmap, 1);
@@ -106,6 +106,10 @@ extern "C" {
         if(!targetRect){
             env->CallVoidMethod(oriOpenCv, me, 0, 0, -1, -1);
         }else{
+            targetRect->rect.x /= sc;
+            targetRect->rect.y /= sc;
+            targetRect->rect.width /= sc;
+            targetRect->rect.height /= sc;
             env->CallVoidMethod(oriOpenCv, me, targetRect->rect.x, targetRect->rect.y, targetRect->rect.width, targetRect->rect.height);
         }
     }
