@@ -33,6 +33,7 @@ import com.origami.utils.Dp2px;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.List;
 
 /**
  * @by: origami
@@ -223,7 +224,7 @@ public class WindowUtil {
      * @param resId
      * @return
      */
-    public View getViewById(int resId){
+    public <T extends View> T getViewById(int resId){
         if(bindView == null){ throw new RuntimeException("you must be bind the view at first"); }
         return bindView.findViewById(resId);
     }
@@ -263,7 +264,7 @@ public class WindowUtil {
         keyBack();
         showFlag = true;
         if(valS == 0){
-            int valS = paramsWindow.gravity == Gravity.BOTTOM? -1 : 1;
+            valS = paramsWindow.gravity == Gravity.BOTTOM? -1 : 1;
         }
         if(showAnimator == null){
             showAnimator = ValueAnimator.ofFloat(0,1f);
@@ -335,7 +336,7 @@ public class WindowUtil {
      * @param showCancelView  是否含有取消选项
      */
     public static void showSelect(Activity activity,
-                                  String[] texts,
+                                  CharSequence[] texts,
                                   final OnSelectListener selectListener,
                                   boolean showCancelView){
         if(activity == null || selectListener == null){ return; }
@@ -355,7 +356,7 @@ public class WindowUtil {
             if(v instanceof  TextView){
                 int index =(int) v.getTag();
                 windowUtil.dismiss();
-                selectListener.onSelect(texts[index], index);
+                selectListener.onSelect(texts[index].toString(), index);
             }
         };
         for (int i = 0; i < texts.length; i++) {
@@ -380,6 +381,55 @@ public class WindowUtil {
         }
         windowUtil.showWithAnimator();
     }
+
+
+    public static void showSelect(Activity activity,
+                                  List<CharSequence> texts,
+                                  final OnSelectListener selectListener,
+                                  boolean showCancelView){
+        if(activity == null || selectListener == null){ return; }
+        View selectView = LayoutInflater.from(activity)
+                .inflate(
+                        R.layout._base_show_select,
+                        activity.getWindow().getDecorView().findViewById(android.R.id.content),
+                        false);
+        LinearLayout showLayout = selectView.findViewById(R.id.select_list);
+        WindowUtil windowUtil = WindowUtil
+                .build(activity)
+                .bindView(selectView)
+                .setLocation(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0, true, false)
+                .setBackDark(0.6f)
+                .setCanCancel();
+        View.OnClickListener listener = v -> {
+            if(v instanceof  TextView){
+                int index =(int) v.getTag();
+                windowUtil.dismiss();
+                selectListener.onSelect(texts.get(index).toString(), index);
+            }
+        };
+        for (int i = 0; i < texts.size(); i++) {
+            TextView textView = new TextView(activity);
+            textView.setTag(i);
+            textView.setTextSize(16);
+            textView.setBackground(activity.getDrawable(R.drawable._select_white_gray));
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Dp2px.dp2px(45));
+            layoutParams.gravity = Gravity.CENTER;
+            textView.setTextColor(Color.BLACK);
+            textView.setGravity(Gravity.CENTER);
+            textView.setText(texts.get(i));
+            textView.setOnClickListener(listener);
+            showLayout.addView(textView, layoutParams);
+        }
+        TextView cancel_view = selectView.findViewById(R.id.select_cancel);
+        if(showCancelView){
+            cancel_view.setVisibility(View.VISIBLE);
+            cancel_view.setOnClickListener(v -> windowUtil.dismiss());
+        }else {
+            cancel_view.setVisibility(View.GONE);
+        }
+        windowUtil.showWithAnimator();
+    }
+
 
 
     /**
@@ -407,6 +457,12 @@ public class WindowUtil {
                                     CharSequence msg, String[] text,
                                     final OnSelectListener selectListener,
                                     @FloatRange(from = 0, to = 1) float backDart){
+        showMakeSure(activity, msg, text, selectListener, backDart, true);
+    }
+    public static void showMakeSure(Activity activity,
+                                    CharSequence msg, String[] text,
+                                    final OnSelectListener selectListener,
+                                    @FloatRange(from = 0, to = 1) float backDart, boolean canCancel){
         if(activity == null || text == null || text.length == 0 || selectListener == null){ return; }
         View makeSureView = LayoutInflater.from(activity)
                 .inflate(
@@ -429,8 +485,9 @@ public class WindowUtil {
         WindowUtil windowUtil = WindowUtil.build(activity)
                 .bindView(makeSureView)
                 .setLocation(Gravity.CENTER, 0, 0, false, false)
-                .setBackDark(backDart)
-                .setCanCancel();
+                .setBackDark(backDart);
+        if(canCancel)
+            windowUtil.setCanCancel();
         View.OnClickListener listener = v -> {
             if(v instanceof TextView){
                 int index =(int) v.getTag();

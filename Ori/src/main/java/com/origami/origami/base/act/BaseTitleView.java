@@ -1,13 +1,16 @@
-package com.origami.origami.base.utils;
+package com.origami.origami.base.act;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.DrawableRes;
@@ -15,12 +18,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatImageView;
 import androidx.core.content.res.ResourcesCompat;
-import androidx.core.util.Consumer;
 import androidx.databinding.DataBindingUtil;
 
 import com.origami.origami.R;
-import com.origami.origami.databinding.OriViewTitleBarBinding;
+import com.origami.origami.databinding.ViewTitleBarBinding;
 import com.origami.utils.Dp2px;
+
 
 
 /**
@@ -34,7 +37,7 @@ public class BaseTitleView extends FrameLayout {
 
     private static final int PADDING10 = Dp2px.dp2px(10);
     Context context;
-    OriViewTitleBarBinding mViews;
+    ViewTitleBarBinding mViews;
 
     public BaseTitleView(@NonNull Context context) {
         super(context);
@@ -53,7 +56,7 @@ public class BaseTitleView extends FrameLayout {
 
     private void init(Context context){
         this.context = context;
-        mViews = DataBindingUtil.inflate(LayoutInflater.from(context), R.layout.ori_view_title_bar, this, true);
+        mViews = DataBindingUtil.inflate(LayoutInflater.from(context), R.layout.view_title_bar, this, true);
         if(mViews == null)
             throw new RuntimeException("DataBindingUtil#bind return null");
         initArgs(tintColor);
@@ -68,6 +71,15 @@ public class BaseTitleView extends FrameLayout {
     public void setbackColorRes(@DrawableRes int res){
         mViews.getRoot().setBackgroundResource(res);
     }
+
+    public void setbackColorDrawable(Drawable res){
+        mViews.getRoot().setBackground(res);
+    }
+
+    public View getRootView(){
+        return mViews.vtbMain;
+    }
+
     public void setbackColor(int color){
         mViews.getRoot().setBackgroundColor(color);
     }
@@ -83,33 +95,24 @@ public class BaseTitleView extends FrameLayout {
         return this;
     }
 
-    public BaseTitleView addImage(@DrawableRes int res, OnClickListener listener) {
-        return addImage(res, listener, null);
-    }
-
-    public BaseTitleView addImage(@DrawableRes int res, OnClickListener listener, Consumer<AppCompatImageView> setImageArgs){
+    public BaseTitleView addImage(@DrawableRes int res, OnClickListener listener){
         AppCompatImageView imageView = new AppCompatImageView(context);
         ViewGroup.LayoutParams params = imageView.getLayoutParams();
         if(params == null)
             params = new ViewGroup.LayoutParams(Dp2px.dp2px(50), ViewGroup.LayoutParams.MATCH_PARENT);
         imageView.setLayoutParams(params);
         imageView.setImageResource(res);
+        imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
         imageView.setPadding(PADDING10, PADDING10, PADDING10, PADDING10);
         imageView.setBackgroundDrawable(ResourcesCompat.getDrawable(context.getResources(),
                 R.drawable.select_tran_black, null));
         imageView.setImageTintList(ColorStateList.valueOf(tintColor));
         imageView.setOnClickListener(listener);
-        if(setImageArgs != null)
-            setImageArgs.accept(imageView);
         mViews.vtbRightLayout.addView(imageView, 0);
         return this;
     }
 
     public BaseTitleView addText(String text, OnClickListener listener){
-        return addText(text, listener, null);
-    }
-
-    public BaseTitleView addText(String text, OnClickListener listener, Consumer<TextView> setTextArgs){
         TextView textView = new TextView(context);
         textView.setText(text);
         ViewGroup.LayoutParams params = textView.getLayoutParams();
@@ -121,8 +124,6 @@ public class BaseTitleView extends FrameLayout {
         textView.setTextSize(14);
         textView.setTextColor(tintColor);
         textView.setOnClickListener(listener);
-        if(setTextArgs != null)
-            setTextArgs.accept(textView);
         mViews.vtbRightLayout.addView(textView, 0);
         return this;
     }

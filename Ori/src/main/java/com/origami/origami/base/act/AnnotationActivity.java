@@ -19,8 +19,6 @@ import com.origami.origami.base.annotation.BContentView;
 import com.origami.origami.base.annotation.BView;
 import com.origami.origami.base.bus.OriEvent;
 import com.origami.origami.base.callback.RequestPermissionNext;
-import com.origami.origami.base.utils.BaseTitleView;
-import com.origami.origami.base.utils.TitleAutoActivity;
 import com.origami.utils.StatusUtils;
 
 import java.lang.reflect.Field;
@@ -33,9 +31,7 @@ import java.lang.reflect.Modifier;
  * @date 2020/12/2
  * @description:
  * @see BContentView
- * @see BView
  * @see BClick
- * @see com.origami.origami.base.utils.Title
  **/
 public abstract class AnnotationActivity extends AppCompatActivity implements View.OnClickListener,
         TitleAutoActivity {
@@ -81,8 +77,8 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
         BContentView contentView = getClass().getAnnotation(BContentView.class);
         if(contentView != null){
             initContentView(contentView.value());
-            if(busEventFlag = contentView.oriEventBus())
-                OriEvent.bindEvent(this);
+            busEventFlag = contentView.oriEventBus();
+            if(busEventFlag) OriEvent.bindEvent(this);
         }else {
             setContentView(getLayout());
             setStatusBar();
@@ -167,7 +163,6 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
      * 处理状态栏
      */
     protected void setStatusBar(){
-        StatusUtils.setImmerseStatus(this);
         mTitleView = initStatusAndTitleBar(this);
     }
 

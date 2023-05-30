@@ -7,8 +7,10 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Point;
+import android.net.Uri;
 import android.os.Environment;
 import android.os.Message;
+import android.provider.MediaStore;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.SparseArray;
@@ -17,8 +19,6 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.IntRange;
-
-import com.origami.utils.UiThreadUtil;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -251,29 +251,33 @@ public class OriImageDetailView extends View {
 
     /**
      * 设置待剪切图片
+     * @deprecated
      */
     public void setImagePath(String localPath){
         setImageBitmap(BitmapFactory.decodeFile(localPath));
     }
 
+    public void setImageByUri(Context context, Uri uri){
+        try {
+            setImageBitmap(MediaStore.Images.Media.getBitmap(context.getContentResolver(), uri));
+        } catch (IOException e) {e.printStackTrace();}
+    }
+
     public void setImageBitmap(Bitmap bm) {
-        post(new Runnable() {
-            @Override
-            public void run() {
-                Matrix matrix = new Matrix();
-                float[] scale = new float[]{1f, 1f};
-                scale[0] = (float) getW() / (float) bm.getWidth();
-                scale[1] = (float) getH() / (float) bm.getHeight();
-                float s = Math.min(scale[0],scale[1]);
-                matrix.postScale(s,s);
-                mBitmap = Bitmap.createBitmap(bm,0,0,bm.getWidth(),bm.getHeight(),matrix,true);
-                centerTW = (float) (getW() - mBitmap.getWidth()) / 2;
-                centerTH = (float) (getH() - mBitmap.getHeight()) / 2;
-                mTRange[0] = (float) mBitmap.getWidth() / 2;
-                mTRange[1] = (float) mBitmap.getHeight() / 2;
-                minScale = 0.8f;
-                postInvalidate();
-            }
+        post(() -> {
+            Matrix matrix = new Matrix();
+            float[] scale = new float[]{1f, 1f};
+            scale[0] = (float) getW() / (float) bm.getWidth();
+            scale[1] = (float) getH() / (float) bm.getHeight();
+            float s = Math.min(scale[0],scale[1]);
+            matrix.postScale(s,s);
+            mBitmap = Bitmap.createBitmap(bm,0,0,bm.getWidth(),bm.getHeight(),matrix,true);
+            centerTW = (float) (getW() - mBitmap.getWidth()) / 2;
+            centerTH = (float) (getH() - mBitmap.getHeight()) / 2;
+            mTRange[0] = (float) mBitmap.getWidth() / 2;
+            mTRange[1] = (float) mBitmap.getHeight() / 2;
+            minScale = 0.8f;
+            postInvalidate();
         });
     }
 

@@ -10,7 +10,7 @@
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/imgproc/types_c.h"
-#include "time.h"
+#include <ctime>
 #define TAG "jni_ori_cv" // 这个是自定义的LOG的标识
 #define LOG_D(...) __android_log_print(ANDROID_LOG_DEBUG, TAG, __VA_ARGS__)
 #define LOG_I(...) __android_log_print(ANDROID_LOG_INFO,TAG ,__VA_ARGS__)

@@ -1,13 +1,11 @@
 package com.origami.activity.adapter;
 
-import android.content.Context;
-import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -28,6 +26,7 @@ public class SelectPlaceAdapter extends RecyclerView.Adapter<SelectPlaceAdapter.
 
     public static class AdapterData{
         public String text;
+        public Uri uri;
         public String image;
         public int num;
     }
@@ -44,13 +43,10 @@ public class SelectPlaceAdapter extends RecyclerView.Adapter<SelectPlaceAdapter.
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout._adapter_ori_select_place, parent, false);
         ViewHolder viewHolder = new ViewHolder(view);
-        viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                context.closeSelect();
-                int position = viewHolder.getAdapterPosition();
-                context.refreshBySelect(dates.get(position).text, viewHolder.textView.getText().toString());
-            }
+        viewHolder.itemView.setOnClickListener(v -> {
+            context.closeSelect();
+            int position = viewHolder.getAdapterPosition();
+            context.refreshBySelect(dates.get(position).text, viewHolder.textView.getText().toString());
         });
         return viewHolder;
     }
@@ -58,7 +54,7 @@ public class SelectPlaceAdapter extends RecyclerView.Adapter<SelectPlaceAdapter.
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         AdapterData adapterData = dates.get(position);
-        Glide.with(context).load(adapterData.image).into(holder.imageView);
+        Glide.with(context).load(adapterData.uri).into(holder.imageView);
         String name;
         if(TextUtils.isEmpty(adapterData.text)){
             name = "最近图片";
@@ -73,7 +69,7 @@ public class SelectPlaceAdapter extends RecyclerView.Adapter<SelectPlaceAdapter.
         }else {
             name = adapterData.text;
         }
-        holder.numView.setText(String.format("（%s）", adapterData.num));
+        holder.numView.setText(String.format("(%s)", adapterData.num));
         holder.textView.setText(name);
     }
 

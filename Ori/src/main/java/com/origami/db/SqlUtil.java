@@ -1,7 +1,6 @@
 package com.origami.db;
 
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.text.TextUtils;
 import android.util.Log;
@@ -11,6 +10,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @by: origami
@@ -61,40 +61,32 @@ public class SqlUtil<T extends DbBean> {
         return selectDataBase(null, 0, 0);
     }
 
-    public List<T> selectDataBase(T data){
+    public List<T> selectDataBase(Map<String, Object> data){
         return selectDataBase(data, 0, 0);
     }
 
-    public List<T> selectDataBase(T data, int page, int pageSize, String... ext) {
+    public List<T> selectDataBase(Map<String, Object> data, int page, int pageSize, String... ext) {
         StringBuilder sql = new StringBuilder("SELECT * FROM ");
         sql.append(db_name);
         boolean firstAdd = true;
         List<String> obj_args = new ArrayList<>();
         if(data != null) {
-            for (Field field : fields) {
-                try {
-                    Object o = field.get(data);
-                    if (o != null) {
-                        if (firstAdd) {
-                            sql.append(" WHERE ");
-                            firstAdd = false;
-                        } else {
-                            sql.append(" AND ");
-                        }
-                        sql
-                                .append(" ")
-                                .append(field.getName())
-                                .append("=");
-                        Class<?> type = field.getType();
-                        if (type == String.class || type == Boolean.class || type == boolean.class) {//string
-                            sql.append("?");
-                            obj_args.add(String.valueOf(o));
-                        } else {
-                            sql.append(o);
-                        }
-                    }
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
+            for (String k : data.keySet()) {
+                Object o = data.get(k);
+                if (o == null) continue;
+                if (firstAdd) {
+                    sql.append(" WHERE ");
+                    firstAdd = false;
+                } else {
+                    sql.append(" AND ");
+                }
+                sql.append(" ").append(k).append("=");
+                Class<?> type = o.getClass();
+                if (type == String.class || type == Boolean.class) {//string
+                    sql.append("?");
+                    obj_args.add(String.valueOf(o));
+                } else {
+                    sql.append(o);
                 }
             }
         }
@@ -114,7 +106,7 @@ public class SqlUtil<T extends DbBean> {
         Cursor cursor = Db.doReadSql(db, sql.toString(), args);
         List<T> faceDates = new ArrayList<>();
         while (cursor.moveToNext()){
-            T bean = null;
+            T bean;
             try {
                 bean = constructor.newInstance();
             } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
@@ -142,10 +134,10 @@ public class SqlUtil<T extends DbBean> {
                             field.set(bean, cursor.getLong(columnIndex));
                         } else if (type == Boolean.class || type == boolean.class) {
                             field.set(bean, "true".equalsIgnoreCase(cursor.getString(columnIndex)));
-                        } else if (type == Double.class) {
+                        } else if (type == Double.class || type == double.class) {
                             field.set(bean, cursor.getDouble(columnIndex));
-                        } else if (type == Float.class) {
-                            field.set(bean, cursor.getString(columnIndex));
+                        } else if (type == Float.class || type == float.class) {
+                            field.set(bean, cursor.getFloat(columnIndex));
                         }
                     } catch (IllegalAccessException e) {
                         e.printStackTrace();
@@ -179,10 +171,7 @@ public class SqlUtil<T extends DbBean> {
                     }else {
                         sql.append(" AND ");
                     }
-                    sql
-                            .append(" ")
-                            .append(field.getName())
-                            .append("=?");
+                    sql.append(" ").append(field.getName()).append("=?");
                     Class<?> type = field.getType();
                     if (type == String.class || type == Boolean.class || type == boolean.class) {//string
                         obj_args.add(String.valueOf(o));
@@ -247,6 +236,7 @@ public class SqlUtil<T extends DbBean> {
                 e.printStackTrace();
             }
         }
+        cursor.close();
     }
 
     /**
@@ -361,10 +351,7 @@ public class SqlUtil<T extends DbBean> {
                     }else {
                         sql.append(" AND ");
                     }
-                    sql
-                            .append(" ")
-                            .append(field.getName())
-                            .append("=");
+                    sql.append(" ").append(field.getName()).append("=");
                     if(field.getType() == Integer.class
                             || field.getType() == int.class
                             || field.getType() == long.class
@@ -380,37 +367,12 @@ public class SqlUtil<T extends DbBean> {
                 e.printStackTrace();
             }
         }
-        Log.e("SQL","checkHasBean:\n" + sql);
+        Log.e("SQL","checkHasBean:\n" + sql.toString());
         Cursor cursor = Db.doReadSql(db, sql.toString(), null);
         boolean b = cursor.moveToNext();
         cursor.close();
         return b;
     }
 
-    /**
-     * 方法1：检查某表列是否存在
-     *
-     * @param db         database
-     * @param tableName  表名
-     * @param columnName 列名
-     * @return true已存在，false不存在
-     */
-    public static boolean checkColumnExist(SQLiteDatabase db, String tableName, String columnName) {
-        boolean result = false;
-        Cursor cursor = null;
-        try {
-            //查询一行
-            cursor = db.rawQuery("SELECT * FROM " + tableName + " LIMIT 0"
-                    , null);
-            result = cursor != null && cursor.getColumnIndex(columnName) != -1;
-        } catch (Exception e) {
-            Log.e("SqlUtil", "checkColumnExists..." + e.getMessage());
-        } finally {
-            if (null != cursor && !cursor.isClosed()) {
-                cursor.close();
-            }
-        }
-        return result;
-    }
 
 }

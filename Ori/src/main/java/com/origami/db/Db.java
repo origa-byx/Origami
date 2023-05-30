@@ -8,6 +8,8 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 
+import com.origami.utils.Ori;
+
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -65,6 +67,33 @@ class Db extends SQLiteOpenHelper {
 
     public static Cursor doReadSql(SQLiteOpenHelper db, String sql,String[] prams){
         return db.getReadableDatabase().rawQuery(sql,prams);
+    }
+
+    /**
+     * sql = "ALTER TABLE 表名 ADD COLUMN 字段 integer DEFAULT 0";
+     * 方法1：检查某表列是否存在
+     *
+     * @param db         database
+     * @param tableName  表名
+     * @param columnName 列名
+     * @return true已存在，false不存在
+     */
+    private boolean checkColumnExist(SQLiteDatabase db, String tableName, String columnName) {
+        boolean result = false;
+        Cursor cursor = null;
+        try {
+            //查询一行
+            cursor = db.rawQuery("SELECT * FROM " + tableName + " LIMIT 0"
+                    , null);
+            result = cursor != null && cursor.getColumnIndex(columnName) != -1;
+        } catch (Exception e) {
+            Ori.e("checkColumnExists", e);
+        } finally {
+            if (null != cursor && !cursor.isClosed()) {
+                cursor.close();
+            }
+        }
+        return result;
     }
 
     public static void closeDb(SQLiteOpenHelper db) {

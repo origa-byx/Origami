@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <data></data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/vtb_main"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/_ori_blue">
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/vtb_back"
+            android:layout_width="50dp"
+            android:layout_height="match_parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            android:src="@mipmap/left"
+            android:padding="10dp"
+            android:tint="@color/_ori_white"
+            android:background="@drawable/select_tran_black"/>
+
+        <TextView
+            android:id="@+id/vtb_title"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:textColor="@color/_ori_white"
+            android:textSize="15sp"
+            android:text="TITLE"
+            android:gravity="center"/>
+
+        <LinearLayout
+            android:id="@+id/vtb_rightLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            app:layout_constraintRight_toRightOf="parent"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

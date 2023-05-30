@@ -1,4 +1,4 @@
-package com.origami.origami.base.utils;
+package com.safone.cloudq.util;
 
 import android.util.SparseArray;
 
@@ -114,7 +114,7 @@ public class ViewPagerAndTabBar {
     }
 
 
-    public static class MViewPagerAdapter extends FragmentStateAdapter{
+    static class MViewPagerAdapter extends FragmentStateAdapter{
         private final List<Fragment> fragments;
         public MViewPagerAdapter(@NonNull FragmentManager fragmentManager,
                                  @NonNull Lifecycle lifecycle,
@@ -135,7 +135,7 @@ public class ViewPagerAndTabBar {
         }
     }
 
-    public static class MViewPagerAdapter2 extends FragmentStateAdapter{
+    static class MViewPagerAdapter2 extends FragmentStateAdapter{
         private final SparseArray<Fragment> fragments;
         public MViewPagerAdapter2(@NonNull FragmentManager fragmentManager,
                                  @NonNull Lifecycle lifecycle,

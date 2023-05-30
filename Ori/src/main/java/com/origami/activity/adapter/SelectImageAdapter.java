@@ -16,6 +16,7 @@ import com.origami.activity.OriImageActivity;
 import com.origami.activity.OriImageSelect;
 import com.origami.origami.R;
 import com.origami.origami.base.toast.OriToast;
+import com.origami.utils.ProviderImageUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,15 +29,15 @@ import java.util.List;
 public class SelectImageAdapter extends RecyclerView.Adapter<SelectImageAdapter.ViewHolder> {
 
     final OriImageSelect context;
-    final List<String> dates;
+    final List<ProviderImageUtils.FilePath> dates;
     final int itemBackColor;
     //最大选择数
     final int maxSelect;
     //是否可以预览
     final boolean canPre;
-    final List<String> selectPaths = new ArrayList<>();
+    final List<ProviderImageUtils.FilePath> selectPaths = new ArrayList<>();
 
-    public SelectImageAdapter(OriImageSelect context, List<String> dates, int selectNum, boolean canPre,@ColorInt int itemBackColor) {
+    public SelectImageAdapter(OriImageSelect context, List<ProviderImageUtils.FilePath> dates, int selectNum, boolean canPre, @ColorInt int itemBackColor) {
         this.context = context;
         this.dates = dates;
         this.maxSelect = Math.max(1, selectNum);
@@ -55,7 +56,7 @@ public class SelectImageAdapter extends RecyclerView.Adapter<SelectImageAdapter.
         }
         View.OnClickListener listener = v -> {
             int position = viewHolder.getAdapterPosition();
-            String path = dates.get(position);
+            ProviderImageUtils.FilePath path = dates.get(position);
             Log.e("SELECT","path->" + path);
             if(!canPre && maxSelect <= 1){
                 selectPaths.add(path);
@@ -74,7 +75,7 @@ public class SelectImageAdapter extends RecyclerView.Adapter<SelectImageAdapter.
         };
         if(canPre) {
             viewHolder.imageView.setOnClickListener(v -> OriImageActivity.startThisAct(context,
-                    dates.get(viewHolder.getAdapterPosition()),
+                    dates.get(viewHolder.getAdapterPosition()).uri,
                     false,
                     viewHolder.imageView));
             viewHolder.textView.setOnClickListener(listener);
@@ -87,7 +88,7 @@ public class SelectImageAdapter extends RecyclerView.Adapter<SelectImageAdapter.
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        String path = dates.get(position);
+        ProviderImageUtils.FilePath path = dates.get(position);
         if(selectPaths.contains(path)){
             holder.textView.setBackground(context.getResources().getDrawable(R.mipmap.ori_select_ok));
             if(maxSelect > 1){ holder.textView.setText(String.valueOf(selectPaths.indexOf(path) + 1)); }
@@ -95,7 +96,7 @@ public class SelectImageAdapter extends RecyclerView.Adapter<SelectImageAdapter.
             holder.textView.setBackground(context.getResources().getDrawable(R.mipmap.ori_select_press));
             holder.textView.setText("");
         }
-        Glide.with(context).load(path).thumbnail(0.3f).into(holder.imageView);
+        Glide.with(context).load(path.uri).thumbnail(0.3f).into(holder.imageView);
     }
 
     @Override
@@ -106,7 +107,7 @@ public class SelectImageAdapter extends RecyclerView.Adapter<SelectImageAdapter.
     /**
      * @return 选择的图片集合
      */
-    public List<String> getSelectPaths() {
+    public List<ProviderImageUtils.FilePath> getSelectPaths() {
         return selectPaths;
     }
 

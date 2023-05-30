@@ -3,34 +3,36 @@
 
     <data></data>
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:background="@drawable/ori_back_loading">
+        android:id="@+id/vl_load_main"
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/vl_loading"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_width="100dp"
+            android:layout_height="70dp"
+            android:layout_gravity="center"
             android:paddingHorizontal="25dp"
-            android:layout_marginBottom="25dp"
             android:tint="@color/_ori_white"
             android:src="@mipmap/ori_loading"
             android:scaleType="fitCenter" />
 
         <TextView
             android:id="@+id/vl_text"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="30dp"
-            android:textSize="12sp"
+            android:textSize="13sp"
+            android:textStyle="bold"
             android:maxLines="1"
-            android:paddingHorizontal="10dp"
             android:ellipsize="end"
+            android:paddingHorizontal="10dp"
+            android:layout_gravity="center"
             android:text="loading..."
-            android:gravity="center"
-            android:textColor="@color/_ori_white"
-            app:layout_constraintBottom_toBottomOf="parent"/>
+            android:gravity="center_horizontal"
+            android:textColor="@color/_ori_white" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 </layout>

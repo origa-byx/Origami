@@ -49,7 +49,6 @@ public class Test_recycler extends AnnotationActivity {
 
     final List<String> dates = new ArrayList<>();
 
-    @BView(R.id.test)
     LineChartView lineChartView;
 
     private Timer timer;
