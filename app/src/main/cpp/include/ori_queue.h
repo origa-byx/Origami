@@ -22,7 +22,6 @@ template<typename T>
 class OriQueue{
 private:
     bool* stopFlag;
-
     std::mutex mMutex;
     std::condition_variable cVariable;
     int maxSize;
@@ -54,6 +53,26 @@ public:
         *out_t = mQueue.front();
         mQueue.pop();
         cVariable.notify_all();
+        return 0;
+    }
+
+    int popFirst(T * out_t, void (*log)(const char* msg)){
+        log("加锁");
+        std::unique_lock<std::mutex> mLock(mMutex);
+        while (mQueue.empty() && !*stopFlag){
+            log("等待");
+            cVariable.wait(mLock);
+        }
+        log("等待完毕");
+        if(*stopFlag)
+            return -1;
+        log("获取首位");
+        *out_t = mQueue.front();
+        log("弹出首位");
+        mQueue.pop();
+        log("全部唤醒");
+        cVariable.notify_all();
+        log("返回");
         return 0;
     }
 

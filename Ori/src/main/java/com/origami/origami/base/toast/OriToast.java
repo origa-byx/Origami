@@ -69,7 +69,7 @@ public class OriToast {
         initToastIfNeed();
         ImageView iconView = sToastView.findViewById(R.id._base_show_toast_icon);
         if(icon == null)
-            iconView.setVisibility(View.GONE);
+            iconView.setVisibility(View.INVISIBLE);
         else {
             iconView.setVisibility(View.VISIBLE);
             iconView.setImageResource(icon?R.mipmap._toast_ok:R.mipmap._toast_no);

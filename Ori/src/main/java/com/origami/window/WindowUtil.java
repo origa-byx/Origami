@@ -339,55 +339,41 @@ public class WindowUtil {
                                   CharSequence[] texts,
                                   final OnSelectListener selectListener,
                                   boolean showCancelView){
-        if(activity == null || selectListener == null){ return; }
-        View selectView = LayoutInflater.from(activity)
-                .inflate(
-                        R.layout._base_show_select,
-                        activity.getWindow().getDecorView().findViewById(android.R.id.content),
-                        false);
-        LinearLayout showLayout = selectView.findViewById(R.id.select_list);
-        WindowUtil windowUtil = WindowUtil
-                .build(activity)
-                .bindView(selectView)
-                .setLocation(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0, true, false)
-                .setBackDark(0.6f)
-                .setCanCancel();
-        View.OnClickListener listener = v -> {
-            if(v instanceof  TextView){
-                int index =(int) v.getTag();
-                windowUtil.dismiss();
-                selectListener.onSelect(texts[index].toString(), index);
-            }
-        };
-        for (int i = 0; i < texts.length; i++) {
-            TextView textView = new TextView(activity);
-            textView.setTag(i);
-            textView.setTextSize(16);
-            textView.setBackground(activity.getDrawable(R.drawable._select_white_gray));
-            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Dp2px.dp2px(45));
-            layoutParams.gravity = Gravity.CENTER;
-            textView.setTextColor(Color.BLACK);
-            textView.setGravity(Gravity.CENTER);
-            textView.setText(texts[i]);
-            textView.setOnClickListener(listener);
-            showLayout.addView(textView, layoutParams);
-        }
-        TextView cancel_view = selectView.findViewById(R.id.select_cancel);
-        if(showCancelView){
-            cancel_view.setVisibility(View.VISIBLE);
-            cancel_view.setOnClickListener(v -> windowUtil.dismiss());
-        }else {
-            cancel_view.setVisibility(View.GONE);
-        }
-        windowUtil.showWithAnimator();
+        showSelect(activity, texts, null, selectListener, null, showCancelView);
     }
 
+    public static void showSelect(Activity activity,
+                                  CharSequence[] texts,
+                                  final OnSelectListener selectListener,
+                                  final Runnable dismissListener,
+                                  boolean showCancelView){
+        showSelect(activity, texts, null, selectListener, dismissListener, showCancelView);
+    }
 
     public static void showSelect(Activity activity,
                                   List<CharSequence> texts,
                                   final OnSelectListener selectListener,
                                   boolean showCancelView){
+        showSelect(activity, null, texts, selectListener, null, showCancelView);
+    }
+
+    public static void showSelect(Activity activity,
+                                  List<CharSequence> texts,
+                                  final OnSelectListener selectListener,
+                                  final Runnable dismissListener,
+                                  boolean showCancelView){
+        showSelect(activity, null, texts, selectListener, dismissListener, showCancelView);
+    }
+
+
+    private static void showSelect(Activity activity,
+                                   CharSequence[] texts0,
+                                   List<CharSequence> texts1,
+                                   final OnSelectListener selectListener,
+                                   final Runnable dismissListener,
+                                   boolean showCancelView){
         if(activity == null || selectListener == null){ return; }
+        if(texts0 == null && texts1 == null) return;
         View selectView = LayoutInflater.from(activity)
                 .inflate(
                         R.layout._base_show_select,
@@ -400,14 +386,16 @@ public class WindowUtil {
                 .setLocation(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0, true, false)
                 .setBackDark(0.6f)
                 .setCanCancel();
+        windowUtil.setDismissListener(dismissListener);
         View.OnClickListener listener = v -> {
             if(v instanceof  TextView){
                 int index =(int) v.getTag();
                 windowUtil.dismiss();
-                selectListener.onSelect(texts.get(index).toString(), index);
+                selectListener.onSelect((texts0 == null? texts1.get(index) : texts0[index]).toString(), index);
             }
         };
-        for (int i = 0; i < texts.size(); i++) {
+        int size = texts0 == null? texts1.size() : texts0.length;
+        for (int i = 0; i < size; i++) {
             TextView textView = new TextView(activity);
             textView.setTag(i);
             textView.setTextSize(16);
@@ -416,7 +404,7 @@ public class WindowUtil {
             layoutParams.gravity = Gravity.CENTER;
             textView.setTextColor(Color.BLACK);
             textView.setGravity(Gravity.CENTER);
-            textView.setText(texts.get(i));
+            textView.setText(texts0 == null? texts1.get(i) : texts0[i]);
             textView.setOnClickListener(listener);
             showLayout.addView(textView, layoutParams);
         }
@@ -429,7 +417,6 @@ public class WindowUtil {
         }
         windowUtil.showWithAnimator();
     }
-
 
 
     /**
@@ -463,6 +450,13 @@ public class WindowUtil {
                                     CharSequence msg, String[] text,
                                     final OnSelectListener selectListener,
                                     @FloatRange(from = 0, to = 1) float backDart, boolean canCancel){
+        showMakeSure(activity, msg, text, selectListener,null,  backDart, canCancel);
+    }
+    public static void showMakeSure(Activity activity,
+                                    CharSequence msg, String[] text,
+                                    final OnSelectListener selectListener,
+                                    Runnable dismissListener,
+                                    @FloatRange(from = 0, to = 1) float backDart, boolean canCancel){
         if(activity == null || text == null || text.length == 0 || selectListener == null){ return; }
         View makeSureView = LayoutInflater.from(activity)
                 .inflate(
@@ -488,6 +482,8 @@ public class WindowUtil {
                 .setBackDark(backDart);
         if(canCancel)
             windowUtil.setCanCancel();
+        if(dismissListener != null)
+            windowUtil.setDismissListener(dismissListener);
         View.OnClickListener listener = v -> {
             if(v instanceof TextView){
                 int index =(int) v.getTag();

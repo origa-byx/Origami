@@ -119,6 +119,7 @@ public class SqlUtil<T extends DbBean> {
                     for (String s : ext) {
                         if (s.equals(fieldName)) {
                             go = false;
+                            break;
                         }
                     }
                 }
@@ -212,7 +213,7 @@ public class SqlUtil<T extends DbBean> {
                 Object o = field.get(data);
                 Class<?> type = field.getType();
                 if (type == String.class || type == Boolean.class || type == boolean.class) {//string
-                    obj_args.add(String.valueOf(o));
+                    obj_args.add(o);
                 } else {
                     obj_args.add(o);
                 }

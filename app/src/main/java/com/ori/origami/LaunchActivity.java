@@ -168,7 +168,7 @@ public class LaunchActivity extends OriBaseActivity<ActivityLaunchBinding> {
             if(nativeOriPlay2 == null) {
                 nativeOriPlay2 = new NativeOriPlay(mViews.surface2.getHolder().getSurface());
 //                "http://sf1-cdn-tos.huoshanstatic.com/obj/media-fe/xgplayer_doc_video/mp4/xgplayer-demo-360p.mp4"
-                nativeOriPlay2.setUrl("http://192.168.0.61:8000/www/ED3_Mura720.wmv");
+                nativeOriPlay2.setUrl("http://vjs.zencdn.net/v/oceans.mp4");
             }else {
                 nativeOriPlay2.release();
                 nativeOriPlay2 = null;

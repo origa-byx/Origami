@@ -3,11 +3,8 @@ package com.origami.origami.base.utils;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
-import android.view.View;
-import android.view.animation.DecelerateInterpolator;
+import android.view.animation.LinearInterpolator;
 import android.widget.TextView;
-
-import androidx.core.util.Consumer;
 
 /**
  * @by: origami
@@ -18,27 +15,36 @@ public class TextAnim {
 
     private CharSequence txt = "";
     private TextView textView;
-    private final ValueAnimator animator = new ValueAnimator();
+    ValueAnimator animator = new ValueAnimator();
 
     public TextAnim(long duration) {
-        this(duration, View::setAlpha);
-    }
-
-    public TextAnim(long duration, Consumer2<TextView, Float> update01) {
-        animator.setFloatValues(0, 1);
-        animator.setInterpolator(new DecelerateInterpolator());
+        animator.setFloatValues(1f, -0.2f, 1f);
+        animator.setInterpolator(new LinearInterpolator());
         animator.setDuration(duration);
         animator.addUpdateListener(anVal -> {
             if(textView != null) {
                 float val = (float) anVal.getAnimatedValue();
-                update01.accept(textView, val);
+                if(!changed && val <= 0){
+                    textView.setText(txt);
+                    changed = true;
+                    val = 0;
+                }
+                textView.setAlpha(val);
+//                float sc = 1 + (1 - val) * 2;
+//                textView.setScaleX(sc);
+//                textView.setScaleY(sc);
             }
         });
         animator.addListener(new AnimatorListenerAdapter() {
             @Override
-            public void onAnimationStart(Animator animation) {
+            public void onAnimationEnd(Animator animation) {
                 if(textView != null)
                     textView.setText(txt);
+            }
+
+            @Override
+            public void onAnimationStart(Animator animation) {
+
             }
         });
     }
@@ -52,11 +58,13 @@ public class TextAnim {
         this.textView = textView;
     }
 
+
+    private boolean changed = false;
     public void setTxt(CharSequence txt){
         this.txt = txt;
         if(animator.isRunning()) animator.cancel();
+        changed = false;
         animator.start();
     }
-
 
 }

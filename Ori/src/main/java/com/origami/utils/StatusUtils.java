@@ -1,10 +1,13 @@
 package com.origami.utils;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.os.Build;
+import android.view.Display;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -102,8 +105,10 @@ public class StatusUtils {
      * @return
      */
     public static int getStatusBarHeight(Context context){
+        if (context == null) return 0;
         //先获取资源ID，再根据ID获取资源
         Resources resources = context.getResources();
+        @SuppressLint("InternalInsetResource")
         int identifier = resources.getIdentifier("status_bar_height", "dimen", "android");
         return resources.getDimensionPixelOffset(identifier);
     }
@@ -115,12 +120,30 @@ public class StatusUtils {
      * @return
      */
     public static int getNavigationBarHeight(Context context) {
-        if (context == null)
-            return 0;
+        if (context == null) return 0;
         Resources resources = context.getResources();
+        @SuppressLint("InternalInsetResource")
         int resourceId = resources.getIdentifier("navigation_bar_height", "dimen", "android");
-        int height = resources.getDimensionPixelSize(resourceId);
-        return height;
+        return resources.getDimensionPixelSize(resourceId);
+    }
+
+    public static boolean checkHasNavigationBar(Context context){
+        if (context == null) return false;
+        WindowManager systemService = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE));
+        if(systemService == null) return false;
+        Display defaultDisplay = systemService.getDefaultDisplay();
+        Point point = new Point();
+        defaultDisplay.getRealSize(point);
+        int ry = point.y;
+        defaultDisplay.getSize(point);
+        int decH = ry - point.y;
+        return decH - getStatusBarHeight(context) > 1;
+    }
+
+    public static int getNavigationBarHeightIfExe(Context context){
+        if(checkHasNavigationBar(context))
+            return getNavigationBarHeight(context);
+        return 0;
     }
 
 }

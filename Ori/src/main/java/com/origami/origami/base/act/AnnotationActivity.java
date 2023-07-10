@@ -48,24 +48,6 @@ public abstract class AnnotationActivity extends AppCompatActivity implements Vi
 
     protected void initContentView(@LayoutRes int resId){
         setContentView(resId);
-        Field[] fields = getClass().getDeclaredFields();
-        for (Field field : fields) {
-            BView bindMyView = field.getAnnotation(BView.class);
-            if(bindMyView != null){
-                try {
-                    boolean accessible = field.isAccessible();
-                    if(field.getModifiers() != Modifier.PUBLIC && !accessible){
-                        field.setAccessible(true);
-                        field.set(this,findViewById(bindMyView.value()));
-                        field.setAccessible(false);
-                    }else{
-                        field.set(this,findViewById(bindMyView.value()));
-                    }
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
     }
 
     @Override

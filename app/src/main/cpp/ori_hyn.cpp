@@ -197,7 +197,7 @@ void OriDecode::decodeUrl(const std::string & m_Url, bool autoPlay){
             continue;
         }
     }
-
+    LOG_E("videoStreamIndex:%d  audioStreamIndex:%d", videoStreamIndex, audioStreamIndex);
     decodeA = false;
     decodeV = false;
     //--------------------------查找视频解码器--------------------------
@@ -407,11 +407,12 @@ void * loopVideoRender(void * args){
     auto * oriDecode = reinterpret_cast<OriDecode* >(args);
     auto videoDecode = oriDecode->m_videoDecode;
     bool seekCurrentFrame = false;
+    LOG_E("渲染视频");
     while (!oriDecode->stop){
-//        LOG_E("渲染视频");
         AVFrame * m_Frame;
-        if(videoDecode->frameQueue->popFirst(&m_Frame) != 0)
+        if(videoDecode->frameQueue->popFirst(&m_Frame) != 0){
             break;
+        }
 //        if(true){
 //            LOG_E("free render");
 //            av_frame_free(&m_Frame);
@@ -427,7 +428,6 @@ void * loopVideoRender(void * args){
                   m_Frame->linesize, 0,
                   videoDecode->m_VideoHeight, videoDecode->m_RGBAFrame->data,
                   videoDecode->m_RGBAFrame->linesize);
-
         //渲染
         ANativeWindow_Buffer m_NativeWindowBuffer;
         //锁定当前 Window ，获取屏幕缓冲区 Buffer 的指针
@@ -436,8 +436,6 @@ void * loopVideoRender(void * args){
 
         int srcLineSize = videoDecode->m_RGBAFrame->linesize[0];//输入图的步长（一行像素有多少字节）
         int dstLineSize = m_NativeWindowBuffer.stride * 4;//RGBA 缓冲区步长
-//        LOG_E("srcLineSize: %d", srcLineSize);
-//        LOG_E("dstLineSize: %d", dstLineSize);
         for (int i = 0; i <= videoDecode->m_targetHeight; i++) {
             //一行一行地拷贝图像数据
             memcpy(dstBuffer + (i + videoDecode->m_offsetHeight) * dstLineSize + videoDecode->m_offsetWidth * 4,
@@ -457,7 +455,7 @@ void * loopVideoRender(void * args){
         double diff = current_clock - audioClock;
         double sleepT = delay + frameDur;
 
-//        LOG_I("delay: %f -> frame: %f -> v: %f -> a: %f -> diff -> %f -> pts: %lld -> ptsA: %lld",
+//        LOG_E("delay: %f -> frame: %f -> v: %f -> a: %f -> diff -> %f -> pts: %ld -> ptsA: %ld",
 //              delay, frameDur, current_clock,
 //              audioClock, diff,
 //              m_Frame->pts, oriDecode->m_audioDecode->pts);
@@ -529,8 +527,8 @@ void * loopVideoDecode(void * args){
             for(;;){
                 AVFrame * m_Frame = av_frame_alloc();
                 if (avcodec_receive_frame(videoDecode->m_AVCodecContext, m_Frame) == 0) {
-//                    videoDecode->frameQueue->push(m_Frame);
-                    av_frame_free(&m_Frame);
+                    videoDecode->frameQueue->push(m_Frame);
+//                    av_frame_free(&m_Frame);
                 } else{
                     av_frame_free(&m_Frame);
                     break;

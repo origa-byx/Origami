@@ -1,9 +1,10 @@
-package com.safone.cloudq.util;
+package com.origami.origami.base.utils;
 
 import android.util.SparseArray;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.arch.core.util.Function;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.Lifecycle;
@@ -27,6 +28,28 @@ public class ViewPagerAndTabBar {
 
     private final ViewPager2 viewPager2;
     private final TabLayout tabLayout;
+
+    private int currentPosition;
+    private PositionChangeListener positionChangeListener;
+
+    public int getCurrentPosition() {
+        return currentPosition;
+    }
+
+    public ViewPagerAndTabBar setPositionChangeListener(PositionChangeListener positionChangeListener) {
+        this.positionChangeListener = positionChangeListener;
+        return this;
+    }
+
+    private void setCurrentPosition(int currentPosition) {
+        if(this.currentPosition == currentPosition) return;
+        if(positionChangeListener != null) positionChangeListener.onChanged(this.currentPosition, currentPosition);
+        this.currentPosition = currentPosition;
+    }
+
+    public interface PositionChangeListener{
+        void onChanged(int oldP, int newP);
+    }
 
     private RecyclerView.Adapter<? extends RecyclerView.ViewHolder> mViewPagerAdapter;
 
@@ -77,6 +100,7 @@ public class ViewPagerAndTabBar {
      * @param position position
      */
     public ViewPagerAndTabBar initCurrentItem(int position){
+        this.currentPosition = position;
         tabLayout.selectTab(tabLayout.getTabAt(position));
         viewPager2.setCurrentItem(position);
         return this;
@@ -86,32 +110,44 @@ public class ViewPagerAndTabBar {
         return bindVP_TB(null, null);
     }
 
-    public ViewPagerAndTabBar bindVP_TB(TabLayout.OnTabSelectedListener listener, ViewPager2.OnPageChangeCallback changeCallback){
-        tabLayout.addOnTabSelectedListener(listener == null? new TabLayout.OnTabSelectedListener() {
-            @Override
-            public void onTabSelected(TabLayout.Tab tab) {
-                viewPager2.setCurrentItem(tab.getPosition(), true);
-            }
-
-            @Override
-            public void onTabUnselected(TabLayout.Tab tab) { }
-
-            @Override
-            public void onTabReselected(TabLayout.Tab tab) { }
-        } : listener);
-        viewPager2.registerOnPageChangeCallback(changeCallback == null? new ViewPager2.OnPageChangeCallback() {
-            @Override
-            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-                tabLayout.setScrollPosition(position, positionOffset, false, true);
-            }
-
-            @Override
-            public void onPageSelected(int position) {
-                tabLayout.selectTab(tabLayout.getTabAt(position));
-            }
-        } : changeCallback);
+    public ViewPagerAndTabBar bindVP_TB(Function<ViewPagerAndTabBar, MOnTabSelectedListener> listener,
+                                        Function<ViewPagerAndTabBar, MOnPageChangeCallback> changeCallback){
+        tabLayout.addOnTabSelectedListener(listener == null? new MOnTabSelectedListener() : listener.apply(this));
+        viewPager2.registerOnPageChangeCallback(changeCallback == null? new MOnPageChangeCallback() : changeCallback.apply(this));
         return this;
     }
+
+    public class MOnTabSelectedListener implements TabLayout.OnTabSelectedListener {
+
+        @Override
+        public void onTabSelected(TabLayout.Tab tab) {
+            int position = tab.getPosition();
+            setCurrentPosition(position);
+            viewPager2.setCurrentItem(position, true);
+        }
+
+        @Override
+        public void onTabUnselected(TabLayout.Tab tab) { }
+
+        @Override
+        public void onTabReselected(TabLayout.Tab tab) { }
+    }
+
+    public class MOnPageChangeCallback extends ViewPager2.OnPageChangeCallback {
+
+        @Override
+        public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+            tabLayout.setScrollPosition(position, positionOffset, false, true);
+        }
+
+        @Override
+        public void onPageSelected(int position) {
+            setCurrentPosition(position);
+            tabLayout.selectTab(tabLayout.getTabAt(position));
+        }
+
+    }
+
 
 
     static class MViewPagerAdapter extends FragmentStateAdapter{
@@ -147,7 +183,7 @@ public class ViewPagerAndTabBar {
         @NonNull
         @Override
         public Fragment createFragment(int position) {
-            return fragments.valueAt(position);
+            return fragments.get(position);
         }
 
         @Override
