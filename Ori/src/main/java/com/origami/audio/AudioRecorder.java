@@ -69,6 +69,7 @@ public class AudioRecorder {
     /**
      * 创建录音对象
      */
+    @SuppressWarnings("MissingPermission")
     public void createAudio(String fileName, int audioSource, int sampleRateInHz, int channelConfig, int audioFormat) {
         // 获得缓冲区字节大小
         bufferSizeInBytes = AudioRecord.getMinBufferSize(sampleRateInHz,

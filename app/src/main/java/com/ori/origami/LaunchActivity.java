@@ -6,6 +6,10 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.hardware.usb.UsbAccessory;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbDeviceConnection;
+import android.hardware.usb.UsbManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.text.Editable;
@@ -28,6 +32,9 @@ import com.origami.origami.base.toast.OriToast;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.HashMap;
+
+import vtb.mashiro.kanon.base.CameraHelper;
 
 @SuppressLint("NonConstantResourceId")
 @BContentView(R.layout.activity_launch)
@@ -84,6 +91,19 @@ public class LaunchActivity extends OriBaseActivity<ActivityLaunchBinding> {
     }
 
     @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        OriToast.show("new intent", true, false);
+    }
+    CameraHelper cameraHelper = new CameraHelper();
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        cameraHelper.closeCamera();
+    }
+
+    @Override
     public void init(@Nullable Bundle savedInstanceState) {
 //        mViews.surface.setVisibility(View.GONE);
 //        mViews.surface2.setVisibility(View.GONE);
@@ -102,48 +122,79 @@ public class LaunchActivity extends OriBaseActivity<ActivityLaunchBinding> {
 //                });
 //            }
 //        }, 2000, 1000);
-        mViews.surface.getHolder().addCallback(new SurfaceHolder.Callback() {
+        checkPermissionAndThen(new String[]{Manifest.permission.CAMERA}, new RequestPermissionNext() {
             @Override
-            public void surfaceCreated(@NonNull SurfaceHolder holder) {
-                Log.e("ORI", "surface--Created1");
-            }
-
-            @Override
-            public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
-                Log.e("ORI", "surface--Changed1");
-            }
-
-            @Override
-            public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
-                if(nativeOriPlay != null){
-                    nativeOriPlay.release();
-                    nativeOriPlay = null;
+            public void next() {
+                if(false) {
+                    cameraHelper.openCamera(LaunchActivity.this, "0", mViews.surface.getHolder().getSurface());
+                    UsbManager systemService = (UsbManager) getSystemService(USB_SERVICE);
+                    HashMap<String, UsbDevice> deviceList = systemService.getDeviceList();
+                    UsbAccessory[] accessoryList = systemService.getAccessoryList();
+                    int a, b;
+                    if (deviceList == null) a = -1;
+                    else a = deviceList.size();
+                    if (accessoryList == null) b = -1;
+                    else b = accessoryList.length;
+                    OriToast.show(String.format("a : %s   b: %s", a, b), true, false);
                 }
-            }
-        });
-        mViews.surface2.getHolder().addCallback(new SurfaceHolder.Callback() {
-            @Override
-            public void surfaceCreated(@NonNull SurfaceHolder holder) {
-                Log.e("ORI","surface--Created2");
+                mViews.surface.getHolder().addCallback(new SurfaceHolder.Callback() {
+                    @Override
+                    public void surfaceCreated(@NonNull SurfaceHolder holder) {
+                        Log.e("ORI", "surface--Created1");
+                    }
+
+                    @Override
+                    public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
+                        Log.e("ORI", "surface--Changed1");
+                    }
+
+                    @Override
+                    public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
+                        if(nativeOriPlay != null){
+                            nativeOriPlay.release();
+                            nativeOriPlay = null;
+                        }
+                    }
+                });
+                mViews.surface2.getHolder().addCallback(new SurfaceHolder.Callback() {
+                    @Override
+                    public void surfaceCreated(@NonNull SurfaceHolder holder) {
+                        Log.e("ORI","surface--Created2");
+                    }
+
+                    @Override
+                    public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
+                        Log.e("ORI", "surface--Changed2");
+                    }
+
+                    @Override
+                    public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
+                        if(nativeOriPlay2 != null){
+                            nativeOriPlay2.release();
+                            nativeOriPlay2 = null;
+                        }
+                    }
+                });
             }
 
             @Override
-            public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
-                Log.e("ORI", "surface--Changed2");
-            }
-
-            @Override
-            public void surfaceDestroyed(@NonNull SurfaceHolder holder) {
-                if(nativeOriPlay2 != null){
-                    nativeOriPlay2.release();
-                    nativeOriPlay2 = null;
-                }
-            }
+            public void failed() {finish();}
         });
     }
 
     @BClick(R.id.top)
     public void top_c(){
+        if(true){
+            cameraHelper.end();
+            return;
+        }
+        UsbManager systemService = (UsbManager) getSystemService(USB_SERVICE);
+        HashMap<String, UsbDevice> deviceList = systemService.getDeviceList();
+        UsbAccessory[] accessoryList = systemService.getAccessoryList();
+        int a,b;
+        if(deviceList == null) a = -1; else a = deviceList.size();
+        if(accessoryList == null) b = -1; else b = accessoryList.length;
+        OriToast.show(String.format("a : %s   b: %s", a, b), true, false);
         open(1);
     }
     @BClick(R.id.bot)
@@ -168,7 +219,8 @@ public class LaunchActivity extends OriBaseActivity<ActivityLaunchBinding> {
             if(nativeOriPlay2 == null) {
                 nativeOriPlay2 = new NativeOriPlay(mViews.surface2.getHolder().getSurface());
 //                "http://sf1-cdn-tos.huoshanstatic.com/obj/media-fe/xgplayer_doc_video/mp4/xgplayer-demo-360p.mp4"
-                nativeOriPlay2.setUrl("http://vjs.zencdn.net/v/oceans.mp4");
+                //rtp://239.77.0.86:5146 http://vjs.zencdn.net/v/oceans.mp4
+                nativeOriPlay2.setUrl("rtp://239.77.0.86:5146");
             }else {
                 nativeOriPlay2.release();
                 nativeOriPlay2 = null;

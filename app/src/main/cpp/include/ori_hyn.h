@@ -15,7 +15,6 @@
 
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
-#include <queue>
 #include "time.h"
 
 #include "ori_queue.h"

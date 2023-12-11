@@ -184,6 +184,8 @@ public class ByteUtil {
 
     public static void setByteArray(byte[] target, int from, int num, byte[] src){
         if(num <= 0) return;
+        if(src.length < num)
+            System.arraycopy(new byte[num], 0, target, from, num);
         System.arraycopy(src, 0, target, from, Math.min(src.length, num));
     }
 

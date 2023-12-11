@@ -2,6 +2,8 @@ package com.ori.origami;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.hardware.Camera;
+import android.hardware.camera2.CameraDevice;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -50,6 +52,8 @@ public class Test2Act extends AnnotationActivity {
 //        GlobalWindowUtil.builder()
 //                .setCanTouch(false)
 //                .build().showToast(new ToastMsg("开始了开始了"));
+
+
     }
 
     @Override
@@ -59,9 +63,6 @@ public class Test2Act extends AnnotationActivity {
 //            moveTaskToBack(true);
 //            return true;
             OriToast.show("返回", true, true, Gravity.BOTTOM);
-            Intent intent = new Intent(this, TestActivity.class);
-            startActivity(intent);
-
             return true;
         }
         return super.onKeyDown(keyCode, event);

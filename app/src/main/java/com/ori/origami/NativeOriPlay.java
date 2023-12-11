@@ -24,7 +24,7 @@ public class NativeOriPlay {
     private long native_obj_ptr;
 
     public NativeOriPlay(Surface surface) {
-        setNativeWindow(surface, 30);
+        setNativeWindow(surface, 120);
     }
 
     /**

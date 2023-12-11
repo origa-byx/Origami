@@ -96,6 +96,7 @@ extern "C" {
         OriDecode* m_video;
         getOriDecode(&m_video, *env, this_z);
         m_video->release();
+//        delete m_video;
     }
 
     JNIEXPORT void JNICALL
@@ -169,10 +170,14 @@ void OriDecode::decodeUrl(const std::string & m_Url, bool autoPlay){
 
     //创建封装格式上下文
     m_AVFormatContext = avformat_alloc_context();
-
+//    m_AVFormatContext->iformat = av_find_input_format("sdp");
+    int ret;
     //打开输入文件，解协议封装
-    if(avformat_open_input(&m_AVFormatContext, m_Url.c_str(), nullptr, nullptr) != 0){
-        LOG_E("OriDecode::decodeUrl avformat_open_input fail.");
+    if((ret = avformat_open_input(&m_AVFormatContext, m_Url.c_str(), nullptr, nullptr)) != 0){
+        char * bufferError = new char[100];
+        LOG_E("OriDecode::decodeUrl avformat_open_input fail. %d, %d, %s",
+              av_strerror(ret, bufferError, 100), ret, bufferError);
+        delete[] bufferError;
         return;
     }
 
@@ -329,18 +334,18 @@ bool AudioDecode::findAndOpenDecoder(AVFormatContext &avFormatContext, uint32_t 
     LOG_E("A_TIME_Stream: %d  %d", avFormatContext.streams[audioStreamIndex]->time_base.den, avFormatContext.streams[audioStreamIndex]->time_base.num);
     LOG_E("A_TIME: %d  %d", m_AVCodecContext->time_base.den, m_AVCodecContext->time_base.num);
     swr = swr_alloc();
-    out_ch_layout = m_AVCodecContext->channel_layout;
+    out_ch_layout = (int32_t) m_AVCodecContext->channel_layout;
     outSampleRate = m_AVCodecContext->sample_rate;
     swr_alloc_set_opts(swr, out_ch_layout,
                              out_sample_fmt,
-                             outSampleRate,//输出格式
-                             m_AVCodecContext->channel_layout,
+                       (int32_t) outSampleRate,//输出格式
+                       (int32_t) m_AVCodecContext->channel_layout,
                              m_AVCodecContext->sample_fmt,
                              m_AVCodecContext->sample_rate, 0,
                              nullptr);//输入格式
     swr_init(swr);
     out_channel_nb = av_get_channel_layout_nb_channels(out_ch_layout);
-    buffer = static_cast<uint8_t *>(av_malloc(out_channel_nb * outSampleRate));
+    buffer = static_cast<uint8_t *>(av_malloc(out_channel_nb * outSampleRate * 2));
     audioPlayer->android_openAudioDevice(outSampleRate, out_channel_nb);
     return true;
 }
@@ -447,7 +452,7 @@ void * loopVideoRender(void * args){
 //        av_frame_unref(videoDecode->m_RGBAFrame);
         // m_Frame->pts 是在重编码阶段赋值的，同步需要估计解码的耗时
         //注意此处的time_base来自于AVStream, AVCodecContext的time_base是错误的，分子0好像默认了60帧速率去计算时间
-        double current_clock = m_Frame->pts * av_q2d(oriDecode->m_videoDecode->time_base);
+        double current_clock = (double) m_Frame->pts * av_q2d(oriDecode->m_videoDecode->time_base);
 
         double delay = ((double) m_Frame->repeat_pict) / (2 * oriDecode->m_videoDecode->fps);
         double frameDur = (double) 1 / oriDecode->m_videoDecode->fps;
@@ -490,22 +495,26 @@ int32_t getBuff2AudioPlay(OriDecode* oriDecode){
         if(audioDecode->frameQueue->popFirst(&m_Frame) != 0)
             break;
         //同步当前时间
-        audioDecode->current_clock = m_Frame->pts * av_q2d(audioDecode->time_base);
+        audioDecode->current_clock = (double) m_Frame->pts * av_q2d(audioDecode->time_base);
 
         audioDecode->pts = m_Frame->pts;
+        int64_t sample_delay = swr_get_delay(audioDecode->swr, m_Frame->sample_rate);
         audioDecode->dst_nb_samples = av_rescale_rnd(
-                swr_get_delay(audioDecode->swr, m_Frame->sample_rate) + m_Frame->nb_samples,
+                sample_delay + m_Frame->nb_samples,
                 audioDecode->outSampleRate,
                 m_Frame->sample_rate,
                 AV_ROUND_UP);
 
-        swr_convert(audioDecode->swr, &audioDecode->buffer, audioDecode->dst_nb_samples,
+        swr_convert(audioDecode->swr, &audioDecode->buffer, (int) audioDecode->dst_nb_samples,
                     const_cast<const uint8_t **>(m_Frame->data), m_Frame->nb_samples);
 
+//        int out_buffer_size = av_samples_get_buffer_size(nullptr, audioDecode->out_channel_nb,
+//                                                         m_Frame->nb_samples, audioDecode->out_sample_fmt, 1);
         int out_buffer_size = av_samples_get_buffer_size(nullptr, audioDecode->out_channel_nb,
-                                                         m_Frame->nb_samples, audioDecode->out_sample_fmt, 1);
-        av_frame_free(&m_Frame);
-//        LOG_E("out_buffer_size-> %u", out_buffer_size);
+                                                         (int32_t) audioDecode->dst_nb_samples, audioDecode->out_sample_fmt, 1);
+//        av_frame_free(&m_Frame);
+//        LOG_E("sample_delay-> %ld nb_samples-> %d outSampleRate-> %ld", sample_delay, m_Frame->nb_samples, audioDecode->outSampleRate);
+//        LOG_E("pts-> %ld dst_nb_samples-> %ld out_buffer_size-> %u", audioDecode->pts, audioDecode->dst_nb_samples, out_buffer_size);
         return out_buffer_size;
     }
     oriDecode->canSafeReleaseCall("音频播放 stop");

@@ -51,6 +51,17 @@ add_library( # Sets the name of the library.
         src/main/cpp/ori_hyn.cpp)
 
 add_library( # Sets the name of the library.
+        ori_ppn
+
+        # Sets the library as a shared library.
+        SHARED
+
+        # Provides a relative path to your source file(s).
+        src/main/cpp/ori_queue.cpp
+        src/main/cpp/ori_audio.cpp
+        src/main/cpp/ori_ppn.cpp)
+
+add_library( # Sets the name of the library.
         ori_transcoding
 
         # Sets the library as a shared library.
@@ -91,6 +102,7 @@ set_target_properties(opencv_java4 PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_D
 #添加第三方头文件
 target_include_directories(origami PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/include)
 target_include_directories(ori_hyn PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/include)
+target_include_directories(ori_ppn PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/include)
 target_include_directories(ori_transcoding PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/include)
 target_include_directories(oricv PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/include)
 # Searches for a specified prebuilt library and stores the path as a
@@ -131,6 +143,21 @@ target_link_libraries( # Specifies the target library.
 
 target_link_libraries( # Specifies the target library.
         ori_hyn
+        android
+
+        avcodec
+        avfilter
+        avformat
+        avutil
+        swresample
+        swscale
+        # Links the target library to the log library
+        # included in the NDK.
+        ${log-lib}
+        ${OpenSLES-lib})
+
+target_link_libraries( # Specifies the target library.
+        ori_ppn
         android
 
         avcodec

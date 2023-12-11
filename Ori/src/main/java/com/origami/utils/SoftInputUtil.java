@@ -1,8 +1,8 @@
 package com.origami.utils;
 
 import android.content.Context;
-import android.content.res.Resources;
 import android.graphics.Rect;
+import android.util.Log;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 
@@ -46,12 +46,11 @@ public class SoftInputUtil {
         void onChanged(boolean isSoftInputShow, int softInputHeight, int viewOffset);
     }
 
-    public SoftInputUtil attachSoftInput(View moveView){
-        attachSoftInput(moveView, moveView.getRootView());
-        return this;
+    public void attachSoftInput(View moveView, final View... anyView){
+        attachSoftInput(moveView, moveView.getRootView(), anyView);
     }
 
-    public SoftInputUtil attachSoftInput(View moveView, View rootView) {
+    public void attachSoftInput(View moveView, View rootView, final View... anyView) {
         attachSoftInput(rootView, (isSoftInputShow, softInputHeight, viewOffset) -> {
             if(isSoftInputShow && viewOffset > 0) {
                 moveView.setTranslationY(-viewOffset);
@@ -59,16 +58,15 @@ public class SoftInputUtil {
                 moveView.setTranslationY(0);
             }
         });
-        return this;
+        addAttachView(anyView);
     }
 
-    public SoftInputUtil addAttachView(final View... anyView){
+    public void addAttachView(final View... anyView){
         if(anyView != null && anyView.length > 0){
             for (View view : anyView) {
                 view.setOnFocusChangeListener(sFocusChangeListener);
             }
         }
-        return this;
     }
 
     public void setMyListener(ISoftInputChanged listener) {
@@ -79,13 +77,13 @@ public class SoftInputUtil {
      * @param rootView  根view {@link View#getRootView()}
      * @param listener 监听器
      */
-    private void attachSoftInput(View rootView, final ISoftInputChanged listener) {
+    public void attachSoftInput(View rootView, final ISoftInputChanged listener) {
         if (listener == null || rootView == null) return;
         this.listener = listener;
         navigationHeight = getNavigationBarHeight(rootView.getContext());
         //anyView为需要调整高度的View，理论上来说可以是任意的View
         this.currentView = null;
-
+        isNavigationBarShow = StatusUtils.checkHasNavigationBar(rootView.getContext());
         rootView.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
             if(currentView == null) return;
             //对于Activity来说，该高度即为屏幕高度
@@ -105,6 +103,7 @@ public class SoftInputUtil {
             int softInputHeight = 0;
             //如果有导航栏，则要去除导航栏的高度
             int mutableHeight = isNavigationBarShow ? navigationHeight : 0;
+            Log.e("ORI", "muteable: " + mutableHeight + " root: " + rootHeight + " rect: " + rect.bottom);
             if (rootHeight - mutableHeight > rect.bottom) {
                 //除去导航栏高度后，可见区域仍然小于屏幕高度，则说明键盘弹起了
                 isSoftInputShow = true;
@@ -140,11 +139,7 @@ public class SoftInputUtil {
     //***************STATIC METHOD******************
 
     public static int getNavigationBarHeight(Context context) {
-        if (context == null)
-            return 0;
-        Resources resources = context.getResources();
-        int resourceId = resources.getIdentifier("navigation_bar_height", "dimen", "android");
-        return resources.getDimensionPixelSize(resourceId);
+        return StatusUtils.getNavigationBarHeightIfExe(context);
     }
 
     public static void showSoftInput(View view) {

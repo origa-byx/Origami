@@ -62,7 +62,8 @@ dependencies {
         transitive = false
     }
 
-    implementation 'com.lzy.net:okgo:3.0.4'
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+//    implementation 'com.lzy.net:okgo:3.0.4'
     //Excel工具
     api 'net.sourceforge.jexcelapi:jxl:2.6.12'
     api 'androidx.swiperefreshlayout:swiperefreshlayout:1.0.0'

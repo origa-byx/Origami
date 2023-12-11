@@ -56,6 +56,19 @@ public:
         return 0;
     }
 
+    int popFirst2(T * out_t){
+        std::unique_lock<std::mutex> mLock(mMutex);
+        while (mQueue.empty() && !*stopFlag){
+            cVariable.wait(mLock);
+        }
+        if(mQueue.empty() && *stopFlag)
+            return -1;
+        *out_t = mQueue.front();
+        mQueue.pop();
+        cVariable.notify_all();
+        return 0;
+    }
+
     int popFirst(T * out_t, void (*log)(const char* msg)){
         log("加锁");
         std::unique_lock<std::mutex> mLock(mMutex);

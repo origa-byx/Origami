@@ -65,8 +65,8 @@ public class WindowUtil {
         paramsWindow.height = WindowManager.LayoutParams.WRAP_CONTENT;
         paramsWindow.format = PixelFormat.TRANSPARENT;
         paramsWindow.flags = window_layoutParams_flags |
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL |
-                WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH |
+//                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL |
+//                WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH |
                 WindowManager.LayoutParams.FLAG_DIM_BEHIND;
         if(system_window){
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -235,10 +235,12 @@ public class WindowUtil {
      */
     @SuppressLint("ClickableViewAccessibility")
     public WindowUtil setCanCancel(){
+//        paramsWindow.flags |= WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
         bindView.setOnTouchListener((v, event) -> {
-            if(event.getAction() == MotionEvent.ACTION_OUTSIDE){
-                dismiss();
-            }
+            dismiss();
+//            if(event.getAction() == MotionEvent.ACTION_OUTSIDE){
+//                dismiss();
+//            }
             return false;
         });
         return this;

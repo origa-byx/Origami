@@ -1,5 +1,4 @@
 #include <jni.h>
-#include <jni.h>
 
 //
 // Created by Administrator on 2023/2/24.

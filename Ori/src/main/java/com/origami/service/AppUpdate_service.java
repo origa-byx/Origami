@@ -15,21 +15,26 @@ import android.text.TextUtils;
 import android.widget.RemoteViews;
 
 import androidx.annotation.DrawableRes;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.FileProvider;
 
-import com.lzy.okgo.OkGo;
-import com.lzy.okgo.callback.FileCallback;
-import com.lzy.okgo.model.Progress;
-import com.lzy.okgo.model.Response;
-import com.origami.origami.R;
 import com.origami.App;
+import com.origami.origami.R;
 import com.origami.utils.Ori;
 import com.origami.window.NotificationChannelUtil;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 import okhttp3.OkHttpClient;
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
 
 /**
  * @by: origami
@@ -91,6 +96,7 @@ public abstract class AppUpdate_service extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        Ori.d("DOWN", "GO");
         Notification.Builder builder = new Notification.Builder(this.getApplicationContext());
         remoteViews = new RemoteViews(this.getPackageName(), R.layout._notify_app_update);
         remoteViews.setTextViewText(R.id.notify_a_update_app_name, getAppName(App.appContext));
@@ -127,33 +133,100 @@ public abstract class AppUpdate_service extends Service {
             return super.onStartCommand(intent, flags, startId);
         }
         startForeground(NOTIFY_ID, notification);
-        OkGo.getInstance().setOkHttpClient(new OkHttpClient());
-        OkGo.<File>get(downUrl).tag("Download").execute(new FileCallback() {
-                    @Override
-                    public void onSuccess(Response<File> response) {
-                        fileAkp = response.body();
-                        isReally = true;
-                        remoteViews.setTextViewText(R.id.notify_a_update_text, "下载完成");
-                        manager.notify(NOTIFY_ID, notification);
-                        install(fileAkp, App.appContext);
-                    }
+        FileC fileC = new FileC() {
+            @Override
+            public void onOk(File file) {
+                fileAkp = file;
+                isReally = true;
+                remoteViews.setTextViewText(R.id.notify_a_update_text, "下载完成");
+                remoteViews.setInt(R.id.notify_a_update_progress, "setProgress", 100);
+                manager.notify(NOTIFY_ID, notification);
+                install(fileAkp, App.appContext);
+            }
 
-                    @Override
-                    public void downloadProgress(Progress progress) {
-                        super.downloadProgress(progress);
-                        int endProgress = (int) (progress.fraction * 100);
-                        remoteViews.setTextViewText(R.id.notify_a_update_text, endProgress + "%");
-                        remoteViews.setInt(R.id.notify_a_update_progress, "setProgress", endProgress);
-                        manager.notify(NOTIFY_ID, notification);
-                    }
+            @Override
+            public void onP(float p) {
+                int endProgress = (int) (p * 100);
+                remoteViews.setTextViewText(R.id.notify_a_update_text, endProgress + "%");
+                remoteViews.setInt(R.id.notify_a_update_progress, "setProgress", endProgress);
+                manager.notify(NOTIFY_ID, notification);
+            }
 
-                    @Override
-                    public void onError(Response<File> response) {
-                        super.onError(response);
-                        Ori.e(TAG,"下载出错" ,response.getException());
-                    }
-                });
+            @Override
+            public void onE(Exception e) {
+                Ori.e(TAG,"下载出错" , e);
+            }
+        };
+        down(fileC);
         return super.onStartCommand(intent, flags, startId);
+    }
+
+
+    private void down(FileC fileC){
+        OkHttpClient builder = new OkHttpClient.Builder().build();
+        Retrofit build = new Retrofit.Builder().client(builder).baseUrl("https://dl.hdslb.com").build();
+        AppUpdateApi appUpdateApi = build.create(AppUpdateApi.class);
+        Call<ResponseBody> responseBodyCall = appUpdateApi.downFile(downUrl);
+        responseBodyCall.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(@NonNull Call<ResponseBody> call, @NonNull Response<ResponseBody> response) {
+                String name = getCacheDir().getAbsoluteFile() + File.separator + "base.apk";
+                Ori.d("DOWN", "文件地址： " + name);
+                File file = new File(name);
+                if(!file.exists()){
+                    if(file.getParentFile() != null && !file.getParentFile().exists()){
+                        if (!file.getParentFile().mkdirs()) {
+                            fileC.onE(new IOException("mkdirs failed"));
+                            return;
+                        }
+                    }
+                    try {
+                        if (!file.createNewFile()) {
+                            fileC.onE(new IOException("createNewFile failed"));
+                            return;
+                        }
+                    } catch (IOException e) {
+                        fileC.onE(e);
+                    }
+                }
+                try (ResponseBody body = response.body();
+                     FileOutputStream stream = new FileOutputStream(file))
+                {
+                    if(body == null) {
+                        fileC.onE(new IOException("body is null"));
+                        return;
+                    }
+                    InputStream inputStream = body.byteStream();
+                    long total = body.contentLength();
+                    Ori.d("DOWN", "总大小： " + total);
+                    byte[] buffer = new byte[1024 * 512];
+                    int len;
+                    int current = 0;
+                    float last = 0;
+                    while ((len = inputStream.read(buffer)) != -1){
+                        stream.write(buffer, 0, len);
+                        current += len;
+                        if(total != 0){
+                            float p = (float) (current) / total;
+                            Ori.d("DOWN", "当前读取大小： " + len + " current: " + current + " p: " + p);
+                            if(p - last > 0.01){
+                                last = p;
+                                fileC.onP(p);
+                            }
+                        }
+                    }
+                    stream.flush();
+                    fileC.onOk(file);
+                } catch (IOException e) {
+                    fileC.onE(e);
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<ResponseBody> call, @NonNull Throwable t) {
+                fileC.onE(new IOException("" + t.getMessage()));
+            }
+        });
     }
 
     public void install(File apkFile, Context mContext) {
