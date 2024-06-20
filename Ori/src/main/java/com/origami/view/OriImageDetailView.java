@@ -47,6 +47,7 @@ public class OriImageDetailView extends View {
     private final float[] mTRange = new float[]{0f,0f};//最大偏移
 
     private Bitmap mBitmap;//原始位图
+    private Bitmap mDrawBitmap;
 
     private boolean canMove = true;//长按事件后不允许移动
     private boolean simPoint = true;//是否全程单点触控, 判断触发单点事件(长按 or 点击)
@@ -184,7 +185,6 @@ public class OriImageDetailView extends View {
 //        return super.onTouchEvent(event);
     }
 
-
     private void setSimPointFalse(){
         simPoint = false;
         if(getHandler() != null){
@@ -206,6 +206,7 @@ public class OriImageDetailView extends View {
      **/
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        needHandler = true;
         int modeW = MeasureSpec.getMode(widthMeasureSpec);
         int modeH = MeasureSpec.getMode(heightMeasureSpec);
         if(modeW != MeasureSpec.EXACTLY){ widthMeasureSpec
@@ -226,6 +227,7 @@ public class OriImageDetailView extends View {
     protected void onDraw(Canvas canvas) {
         if(mBitmap != null) {
             canvas.save();
+            Bitmap bitmap = handlerBitmap(mBitmap, getWidth(), getHeight());
             if(Math.abs(mTranslation[0] * mScale) > (mTRange[0] * mScale - mR[0] - mustPx)) {
                 if(mTranslation[0] < 0) {
                     mTranslation[0] = - ( mTRange[0] - (mR[0] + mustPx) / mScale );
@@ -244,7 +246,7 @@ public class OriImageDetailView extends View {
                     (float) getWidth() / 2 + (mTranslation[0] + centerTW) * mScale,
                     (float) getHeight() / 2 + (mTranslation[1] + centerTH) * mScale);
             canvas.translate((mTranslation[0] + centerTW) * mScale, (mTranslation[1] + centerTH) * mScale);
-            canvas.drawBitmap(mBitmap, 0,0, null);
+            canvas.drawBitmap(bitmap, 0,0, null);
             canvas.restore();
         }
     }
@@ -263,22 +265,30 @@ public class OriImageDetailView extends View {
         } catch (IOException e) {e.printStackTrace();}
     }
 
+
+    boolean needHandler = false;
     public void setImageBitmap(Bitmap bm) {
-        post(() -> {
-            Matrix matrix = new Matrix();
-            float[] scale = new float[]{1f, 1f};
-            scale[0] = (float) getW() / (float) bm.getWidth();
-            scale[1] = (float) getH() / (float) bm.getHeight();
-            float s = Math.min(scale[0],scale[1]);
-            matrix.postScale(s,s);
-            mBitmap = Bitmap.createBitmap(bm,0,0,bm.getWidth(),bm.getHeight(),matrix,true);
-            centerTW = (float) (getW() - mBitmap.getWidth()) / 2;
-            centerTH = (float) (getH() - mBitmap.getHeight()) / 2;
-            mTRange[0] = (float) mBitmap.getWidth() / 2;
-            mTRange[1] = (float) mBitmap.getHeight() / 2;
-            minScale = 0.8f;
-            postInvalidate();
-        });
+        mBitmap = bm;
+        needHandler = true;
+        postInvalidate();
+    }
+
+    private Bitmap handlerBitmap(Bitmap bm, int w, int h){
+        float[] scale = new float[]{1f, 1f};
+        scale[0] = (float) w / (float) bm.getWidth();
+        scale[1] = (float) h / (float) bm.getHeight();
+        float s = Math.min(scale[0],scale[1]);
+        if(s == 1 || s == 0){ return bm; }
+        Log.e("ORI", String.format("w : %s, h : %s s: %s", w, h , s));
+        Matrix matrix = new Matrix();
+        matrix.postScale(s,s);
+        Bitmap mBitmap = Bitmap.createBitmap(bm,0,0, bm.getWidth(), bm.getHeight(), matrix,false);
+        centerTW = (float) (w - mBitmap.getWidth()) / 2;
+        centerTH = (float) (h - mBitmap.getHeight()) / 2;
+        mTRange[0] = (float) mBitmap.getWidth() / 2;
+        mTRange[1] = (float) mBitmap.getHeight() / 2;
+        minScale = 0.8f;
+        return mBitmap;
     }
 
     /**

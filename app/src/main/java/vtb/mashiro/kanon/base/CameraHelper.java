@@ -129,6 +129,15 @@ public final class CameraHelper {
             fillBytes(planes[0], y, bytes -> y = bytes);
             fillBytes(planes[1], u, bytes -> u = bytes);
 //            fillBytes(planes[2], v, bytes -> v = bytes);
+//            Image.Plane plane = planes[0];
+//            ByteBuffer buffer = plane.getBuffer();
+//            byte[] dst = new byte[buffer.capacity()];
+//            buffer.get(dst);
+//            int length = dst.length / 4;
+//            int[] pix = new int[length];
+//            for (int i = 0; i < length; i++) {
+//                pix[i] = dst[i]  | (dst[i + 1] << 8) | (dst[i + 1] << 16) | (dst[i + 1] << 32);
+//            }
             if(instance != null) {
                 instance.writeNV21(y, u);
             }

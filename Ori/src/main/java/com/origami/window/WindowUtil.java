@@ -258,7 +258,6 @@ public class WindowUtil {
         bindView.setFocusableInTouchMode(true);
         bindView.requestFocus();
     }
-
     public void showWithAnimator(){
         if(showFlag){ return; }
         bindView.setAlpha(0);

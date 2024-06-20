@@ -29,6 +29,7 @@ import com.origami.origami.base.callback.RequestPermissionNext;
 import com.origami.origami.base.annotation.BClick;
 import com.origami.origami.base.annotation.BContentView;
 import com.origami.origami.base.toast.OriToast;
+import com.origami.utils.Ori;
 
 import java.io.File;
 import java.io.InputStream;
@@ -199,15 +200,16 @@ public class LaunchActivity extends OriBaseActivity<ActivityLaunchBinding> {
     }
     @BClick(R.id.bot)
     public void bot_c(){
-        open(2);
+        open(1);
     }
 
     public void open(int index){
         if(index == 1){
             if(nativeOriPlay == null) {
-                nativeOriPlay = new NativeOriPlay(mViews.surface.getHolder().getSurface());
+                nativeOriPlay = new NativeOriPlay(mViews.surface.getHolder().getSurface(), this,
+                        true, false);
                 final String url =
-                        Environment.getExternalStorageDirectory().getPath() + File.separator + "Yuuna" + File.separator + "mura.wmv";
+                        Ori.getSaveFilePath(this, Environment.DIRECTORY_MOVIES) + "test.mp4";
 //                String url = "rtsp://admin:a1234567@192.168.0.112:554/h264/ch1/sub/av_stream";
 //                    String url = "http://192.168.0.61:8000/www/ED3_Mura720.wmv";
                 nativeOriPlay.setUrl(url);
@@ -217,7 +219,7 @@ public class LaunchActivity extends OriBaseActivity<ActivityLaunchBinding> {
             }
         }else {
             if(nativeOriPlay2 == null) {
-                nativeOriPlay2 = new NativeOriPlay(mViews.surface2.getHolder().getSurface());
+                nativeOriPlay2 = new NativeOriPlay(mViews.surface2.getHolder().getSurface(), this);
 //                "http://sf1-cdn-tos.huoshanstatic.com/obj/media-fe/xgplayer_doc_video/mp4/xgplayer-demo-360p.mp4"
                 //rtp://239.77.0.86:5146 http://vjs.zencdn.net/v/oceans.mp4
                 nativeOriPlay2.setUrl("rtp://239.77.0.86:5146");

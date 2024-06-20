@@ -66,6 +66,7 @@ public:
 
     void bindNativeWindow(JNIEnv& env, jobject& surface);
     void release();
+
 };
 
 class AudioDecode{
@@ -116,7 +117,6 @@ public:
 class OriDecode{
 private:
     std::mutex * mMutex = nullptr;
-
     int waitIndex = 1;
     int safeRelease = 0;
     void (*releaseCallBack)(OriDecode *);
@@ -126,15 +126,19 @@ private:
     uint32_t videoStreamIndex = -1;
     //音频通道
     uint32_t audioStreamIndex = -1;
-    bool decodeV = false, decodeA = false;
 public:
+    //注意这个是全局的，在外部释放，在本身析构之前
+    jobject j_obj;
+    JavaVM* m_androidVM;
+    jmethodID doOtherByOneFrame;
+    bool decodeV = false, decodeA = false;
     //0 really 1 play 2 stop
     int status = 0;
 
     VideoDecode * m_videoDecode = nullptr;
     AudioDecode * m_audioDecode = nullptr;
     bool stop = false;
-
+    int32_t doOtherThing(void* bits, int64_t frame, JNIEnv* env);
     void setReleaseCallBack(void (*releaseCallBack)(OriDecode*));
 
     void canSafeReleaseCall(const std::string&);
@@ -142,13 +146,18 @@ public:
     void loopVDecode();
     void loopADecode();
 
-    OriDecode(int32_t av_max){
+    OriDecode(int32_t av_max, jobject j_obj, bool dV = true, bool dA = true){
+        this->j_obj = j_obj;
+        this->decodeV = dV;
+        this->decodeA = dA;
         mMutex = new std::mutex;
         m_videoDecode = new VideoDecode(&stop, av_max);
         m_audioDecode = new AudioDecode(&stop, av_max);
     };
 
     ~OriDecode(){
+        doOtherByOneFrame = nullptr;
+        m_androidVM->DestroyJavaVM();
         delete mMutex;
     }
 

@@ -36,7 +36,7 @@ extern "C"
 
 //java层用来保存C++对象地址的指针成员变量
 jfieldID objAtJava_ptr;
-
+jmethodID doOtherByOneFrame;
 extern "C" {
     //jni 的第一个加载函数
     JNIEXPORT jint JNICALL
@@ -60,6 +60,7 @@ extern "C" {
         LOG_E("当前JNI版本：%d", jni_version);
         jclass jClazz = env->FindClass("com/ori/origami/NativeOriPlay");
         objAtJava_ptr = env->GetFieldID(jClazz, "native_obj_ptr", "J");
+        doOtherByOneFrame = env->GetMethodID(jClazz, "doOtherByOneFrame", "([III)I");
         return jni_version;
     }
 
@@ -79,10 +80,13 @@ extern "C" {
     }
 
     JNIEXPORT void JNICALL
-    Java_com_ori_origami_NativeOriPlay_setNativeWindow(JNIEnv *env, jobject this_z, jobject surface, jint av_max) {
+    Java_com_ori_origami_NativeOriPlay_setNativeWindow(JNIEnv *env, jobject this_z, jobject surface,
+        jint av_max, jboolean dv, jboolean da) {
         LOG_E("Java_com_ori_origami_NativeRtspPlay_setNativeWindow");
         if(objAtJava_ptr){
-            auto* c_ori = new OriDecode(av_max);
+            auto* c_ori = new OriDecode(av_max, env->NewGlobalRef(this_z), dv, da);
+            env->GetJavaVM(&(c_ori->m_androidVM));
+            c_ori->doOtherByOneFrame = doOtherByOneFrame;
             env->SetLongField(this_z, objAtJava_ptr, reinterpret_cast<jlong>(c_ori));
             c_ori->m_videoDecode->bindNativeWindow(*env, surface);
         } else{
@@ -93,9 +97,10 @@ extern "C" {
     JNIEXPORT void JNICALL
     Java_com_ori_origami_NativeOriPlay_release(JNIEnv *env, jobject this_z) {
         LOG_E("Java_com_ori_origami_NativeRtspPlay_release");
-        OriDecode* m_video;
-        getOriDecode(&m_video, *env, this_z);
-        m_video->release();
+        OriDecode* oriDecode;
+        getOriDecode(&oriDecode, *env, this_z);
+        env->DeleteGlobalRef(oriDecode->j_obj);
+        oriDecode->release();
 //        delete m_video;
     }
 
@@ -167,7 +172,6 @@ void VideoDecode::bindNativeWindow(JNIEnv& env, jobject& surface) {
  */
 void OriDecode::decodeUrl(const std::string & m_Url, bool autoPlay){
 //    avformat_network_init();//初始化网络模块，此编译的ffmpeg so库版本无需此操作了
-
     //创建封装格式上下文
     m_AVFormatContext = avformat_alloc_context();
 //    m_AVFormatContext->iformat = av_find_input_format("sdp");
@@ -203,25 +207,23 @@ void OriDecode::decodeUrl(const std::string & m_Url, bool autoPlay){
         }
     }
     LOG_E("videoStreamIndex:%d  audioStreamIndex:%d", videoStreamIndex, audioStreamIndex);
-    decodeA = false;
-    decodeV = false;
     //--------------------------查找视频解码器--------------------------
-    if(videoStreamIndex != -1){
+    if(videoStreamIndex != -1 && decodeV){
         if(!m_videoDecode->findAndOpenDecoder(*m_AVFormatContext, videoStreamIndex)){
             return;
         }
-        else decodeV = true;
     } else{
+        decodeV = false;
         LOG_E("OriDecode::decodeUrl Fail to find stream index(videoStreamIndex).");
     }
 
     //--------------------------查找音频解码器--------------------------
-    if(audioStreamIndex != -1){
+    if(audioStreamIndex != -1 && decodeA){
         if(!m_audioDecode->findAndOpenDecoder(*m_AVFormatContext, audioStreamIndex)){
              return;
         }
-        else decodeA = true;
     } else {
+        decodeA = false;
         LOG_E("OriDecode::decodeUrl Fail to find stream index(audioStreamIndex).");
     }
 
@@ -253,13 +255,12 @@ void OriDecode::startPlay() {
             av_packet_free(&freeAvPacket);
             break;
         }
-        if(freeAvPacket->stream_index == videoStreamIndex){
+        if(freeAvPacket->stream_index == videoStreamIndex && decodeV){
             m_videoDecode->packetQueue->push(freeAvPacket);
-        } else if(freeAvPacket->stream_index == audioStreamIndex){
+        } else if(freeAvPacket->stream_index == audioStreamIndex && decodeA){
             m_audioDecode->packetQueue->push(freeAvPacket);
         } else {
             av_packet_free(&freeAvPacket);
-            LOG_E("...unknown streamIndex");
         }
     }
     canSafeReleaseCall("解封装 stop");
@@ -355,14 +356,8 @@ void VideoDecode::yuv2rgbFrame_init(){
     m_VideoWidth = m_AVCodecContext->width;
     m_VideoHeight = m_AVCodecContext->height;
     initTargetWH();
-//    LOG_W("m_VideoWidth: %d", m_VideoWidth);
-//    LOG_W("m_VideoHeight: %d", m_VideoHeight);
-//    LOG_W("m_targetWidth: %d", m_targetWidth);
-//    LOG_W("m_targetHeight: %d", m_targetHeight);
-//    LOG_W("m_offsetWidth: %d", m_offsetWidth);
-//    LOG_W("m_offsetHeight: %d", m_offsetHeight);
     m_RGBAFrame = av_frame_alloc();
-    //计算 Buffer 的大小
+    //计算 Buffer 的大小 AV_PIX_FMT_RGBA  AV_PIX_FMT_BGRA
     int bufferSize = av_image_get_buffer_size(AV_PIX_FMT_RGBA, m_targetWidth, m_targetHeight, 1);
     //为 m_RGBAFrame 分配空间
     m_FrameBuffer = (uint8_t *) av_malloc(bufferSize * sizeof(uint8_t));
@@ -410,6 +405,8 @@ void * loopAudioPlay(void * args){
 
 void * loopVideoRender(void * args){
     auto * oriDecode = reinterpret_cast<OriDecode* >(args);
+    JNIEnv* t_env;
+    oriDecode->m_androidVM->AttachCurrentThread(&t_env, nullptr);
     auto videoDecode = oriDecode->m_videoDecode;
     bool seekCurrentFrame = false;
     LOG_E("渲染视频");
@@ -418,12 +415,6 @@ void * loopVideoRender(void * args){
         if(videoDecode->frameQueue->popFirst(&m_Frame) != 0){
             break;
         }
-//        if(true){
-//            LOG_E("free render");
-//            av_frame_free(&m_Frame);
-//            av_usleep(330000);
-//            continue;
-//        }
         if(seekCurrentFrame){
             seekCurrentFrame = false;
             av_frame_free(&m_Frame);
@@ -435,6 +426,11 @@ void * loopVideoRender(void * args){
                   videoDecode->m_RGBAFrame->linesize);
         //渲染
         ANativeWindow_Buffer m_NativeWindowBuffer;
+//        int32_t ret = oriDecode->doOtherThing(videoDecode->m_FrameBuffer, m_Frame->pts, t_env);
+//        if(ret == 0) {
+//            av_frame_free(&m_Frame);
+//            continue;
+//        }
         //锁定当前 Window ，获取屏幕缓冲区 Buffer 的指针
         ANativeWindow_lock(videoDecode->m_NativeWindow, &m_NativeWindowBuffer, nullptr);
         auto *dstBuffer = static_cast<uint8_t *>(m_NativeWindowBuffer.bits);
@@ -443,7 +439,7 @@ void * loopVideoRender(void * args){
         int dstLineSize = m_NativeWindowBuffer.stride * 4;//RGBA 缓冲区步长
         for (int i = 0; i <= videoDecode->m_targetHeight; i++) {
             //一行一行地拷贝图像数据
-            memcpy(dstBuffer + (i + videoDecode->m_offsetHeight) * dstLineSize + videoDecode->m_offsetWidth * 4,
+            memcpy(dstBuffer + (i + videoDecode->m_offsetHeight) * dstLineSize + videoDecode->m_offsetWidth * dstLineSize,
                    videoDecode->m_FrameBuffer + i * srcLineSize,
                    srcLineSize);
         }
@@ -453,39 +449,68 @@ void * loopVideoRender(void * args){
         // m_Frame->pts 是在重编码阶段赋值的，同步需要估计解码的耗时
         //注意此处的time_base来自于AVStream, AVCodecContext的time_base是错误的，分子0好像默认了60帧速率去计算时间
         double current_clock = (double) m_Frame->pts * av_q2d(oriDecode->m_videoDecode->time_base);
-
         double delay = ((double) m_Frame->repeat_pict) / (2 * oriDecode->m_videoDecode->fps);
         double frameDur = (double) 1 / oriDecode->m_videoDecode->fps;
-        double audioClock = oriDecode->m_audioDecode->current_clock;
-        double diff = current_clock - audioClock;
+        double diff;
+        if(oriDecode->decodeA){
+            double audioClock = oriDecode->m_audioDecode->current_clock;
+            diff = current_clock - audioClock;
+        }else{
+            diff = 0;
+        }
         double sleepT = delay + frameDur;
-
 //        LOG_E("delay: %f -> frame: %f -> v: %f -> a: %f -> diff -> %f -> pts: %ld -> ptsA: %ld",
 //              delay, frameDur, current_clock,
 //              audioClock, diff,
 //              m_Frame->pts, oriDecode->m_audioDecode->pts);
 
-        if(diff > 0){//视频快
+        if(diff >= 0){//视频快
             if(diff > 1){
                 //视频快了一秒时，以0.5倍速慢慢追赶
-                av_usleep((uint32_t) (sleepT * 2 * 1000000));
-            }else{
+                if(sleepT > 0){
+                    av_usleep((uint32_t) (sleepT * 2 * 1000000));
+                }
+            }else if((sleepT + diff) > 0){
                 av_usleep((uint32_t) ((sleepT + diff) * 1000000));
             }
         } else{//音频快
             if(diff < -frameDur){
                 //音频快了大于一帧时间时，直接跳过下一帧
                 seekCurrentFrame = true;
-            } else{
+            }else if((sleepT + diff) > 0){
                 //音频快了小于一帧时间, 等待更少时间
                 av_usleep((uint32_t) ((sleepT + diff) * 1000000));
             }
         }
         av_frame_free(&m_Frame);
     }
+    oriDecode->m_androidVM->DetachCurrentThread();
+    t_env = nullptr;
     oriDecode->canSafeReleaseCall("渲染 stop");
     return nullptr;
 }
+
+int32_t OriDecode::doOtherThing(void *bits, int64_t frame, JNIEnv* env) {
+    if(frame == 0 || frame % 30 != 0){ return 0; }
+    auto* tar = reinterpret_cast<int32_t *>(bits);
+    jint w = m_videoDecode->m_targetWidth;
+    jint h = m_videoDecode->m_targetHeight;
+    auto* buf = new int32_t [w * h];
+//       R G B A -> B G R A
+//       G B A R -> A B G R
+    for (int i = 0; i < (w * h); i++){
+        int32_t r = (int32_t) (tar[i] & 0xff000000) >> 16;
+        int32_t b = (int32_t) (tar[i] & 0x0000ff00) << 16;
+        buf[i] = tar[i] & 0x00ff00ff | r | b;
+    }
+    jintArray intArray = env->NewIntArray(w * h);
+    env->SetIntArrayRegion(intArray, 0, w * h, tar);
+    int32_t ret = env->CallIntMethod(j_obj, doOtherByOneFrame, intArray, w, h);
+    env->DeleteLocalRef(intArray);
+    delete[] buf;
+    return ret;
+}
+
 
 int32_t getBuff2AudioPlay(OriDecode* oriDecode){
     auto * audioDecode = oriDecode->m_audioDecode;
@@ -596,8 +621,8 @@ void OriDecode::release() {
         delete oriDecode->m_videoDecode;
         delete oriDecode->m_audioDecode;
         if(oriDecode->m_AVFormatContext){
-            avformat_close_input(&oriDecode->m_AVFormatContext);
 //            avformat_free_context(oriDecode->m_AVFormatContext);
+            avformat_close_input(&oriDecode->m_AVFormatContext);
             oriDecode->m_AVFormatContext = nullptr;
         }
         delete oriDecode;
@@ -708,6 +733,7 @@ void VideoDecode::initTargetWH(){
         m_offsetHeight = 0;
     }
 }
+
 
 std::string jString2str(JNIEnv& env, jstring j_str){
     char* rtn = nullptr;

@@ -110,7 +110,14 @@ public abstract class AppUpdate_service extends Service {
         intentFilter.addAction(click_action);
         registerReceiver(actionHandler, intentFilter);
         Intent intent = new Intent(click_action);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this.getApplicationContext(), 100, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingIntent = null;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            pendingIntent = PendingIntent.getBroadcast(this.getApplicationContext(), 100, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        }else {
+            pendingIntent = PendingIntent.getBroadcast(this.getApplicationContext(), 100, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT);
+        }
 //        remoteViews.setOnClickPendingIntent(,pendingIntent);
         manager = (NotificationManager) this.getApplicationContext().getSystemService(NOTIFICATION_SERVICE);
         if(Build.VERSION.SDK_INT>Build.VERSION_CODES.O){
