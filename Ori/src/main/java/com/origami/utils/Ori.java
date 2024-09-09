@@ -33,6 +33,8 @@ import com.origami.origami.R;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
@@ -40,6 +42,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
+
+import okhttp3.internal.Version;
 
 /**
  * @by: origami

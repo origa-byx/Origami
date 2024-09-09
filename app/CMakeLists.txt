@@ -7,10 +7,78 @@ cmake_minimum_required(VERSION 3.4.1)
 #设置生成的so动态库最后输出的路径
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI})
 set(LOCAL_LDLIBS  "-llog -lGLESv1_CM -ldl -lz")
+set(ORI_AMR_WB_LOC ${CMAKE_SOURCE_DIR}/src/main/cpp/opencore_amr/amrwb)
+set(ORI_AMR_WB_DEC ${ORI_AMR_WB_LOC}/dec)
+set(ORI_AMR_NB_LOC ${CMAKE_SOURCE_DIR}/src/main/cpp/opencore_amr/amrnb)
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
+add_library( # Sets the name of the library.
+        ori_amr_wb
+
+        # Sets the library as a shared library.
+        SHARED
+
+        ${ORI_AMR_WB_DEC}/src/agc2_amr_wb.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/band_pass_6k_7k.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/dec_acelp_2p_in_64.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/dec_acelp_4p_in_64.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/dec_alg_codebook.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/dec_gain2_amr_wb.cpp
+# 	    ${ORI_AMR_WB_DEC}/src/decoder_amr_wb.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/deemphasis_32.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/dtx_decoder_amr_wb.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/get_amr_wb_bits.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/highpass_400hz_at_12k8.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/highpass_50hz_at_12k8.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/homing_amr_wb_dec.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/interpolate_isp.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/isf_extrapolation.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/isp_az.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/isp_isf.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/lagconceal.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/low_pass_filt_7k.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/median5.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/mime_io.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/noise_gen_amrwb.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/normalize_amr_wb.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/oversamp_12k8_to_16k.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/phase_dispersion.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/pit_shrp.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/pred_lt4.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/preemph_amrwb_dec.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/pvamrwb_math_op.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/pvamrwbdecoder.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/q_gain2_tab.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/qisf_ns.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/qisf_ns_tab.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/qpisf_2s.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/qpisf_2s_tab.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/scale_signal.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/synthesis_amr_wb.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/voice_factor.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/wb_syn_filt.cpp
+ 	    ${ORI_AMR_WB_DEC}/src/weight_amrwb_lpc.cpp
+        # Provides a relative path to your source file(s).
+        ${ORI_AMR_WB_LOC}/wrapper.cpp)
+add_library( # Sets the name of the library.
+        ori_amr_wb_dec
+
+        # Sets the library as a shared library.
+        SHARED
+
+        # Provides a relative path to your source file(s).
+		src/main/cpp/ori_amr_wb_dec.cpp)
+add_library( # Sets the name of the library.
+        ori_amr
+
+        # Sets the library as a shared library.
+        SHARED
+
+        # Provides a relative path to your source file(s).
+        src/main/cpp/ori_amr_wb.cpp)
+
 add_library( # Sets the name of the library.
         oricv
 
@@ -100,6 +168,15 @@ set_target_properties(opencv_java4 PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_D
 
 
 #添加第三方头文件
+target_include_directories(ori_amr_wb PRIVATE
+        ${CMAKE_SOURCE_DIR}/src/main/cpp/opencore_amr/common/dec/include
+        ${CMAKE_SOURCE_DIR}/src/main/cpp/opencore_amr/oscl
+        ${ORI_AMR_WB_LOC})
+
+target_include_directories(ori_amr PRIVATE
+		${ORI_AMR_WB_LOC}
+		${CMAKE_SOURCE_DIR}/src/main/cpp/include)
+target_include_directories(ori_amr PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/include)
 target_include_directories(origami PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/include)
 target_include_directories(ori_hyn PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/include)
 target_include_directories(ori_ppn PRIVATE ${CMAKE_SOURCE_DIR}/src/main/cpp/include)
@@ -195,6 +272,29 @@ target_link_libraries( # Specifies the target library.
         avutil
         swresample
         swscale
+        # Links the target library to the log library
+        # included in the NDK.
+        ${log-lib})
+
+target_link_libraries( # Specifies the target library.
+        ori_amr
+        android
+
+        avcodec
+        avfilter
+        avformat
+        avutil
+        swresample
+        swscale
+        # Links the target library to the log library
+        # included in the NDK.
+        ${log-lib})
+
+target_link_libraries( # Specifies the target library.
+		ori_amr_wb_dec
+
+        ori_amr_wb
+        android
         # Links the target library to the log library
         # included in the NDK.
         ${log-lib})

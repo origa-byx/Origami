@@ -10,7 +10,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @by: origami
@@ -57,37 +56,69 @@ public class SqlUtil<T extends DbBean> {
         if(key == null){ throw new RuntimeException("not found key -- key and Item Can not be used together"); }
     }
 
+    public String getCreateDbCmd(){
+        StringBuilder builder = new StringBuilder();
+        builder.append("create table if not exists ").append(db_name).append("(")
+                .append(key.getName()).append(" integer primary key autoincrement,");
+        for (Field field : fields) {
+            Class<?> type = field.getType();
+            Item item = field.getAnnotation(Item.class);
+            if(item == null) continue;
+            String vType = item.type();
+            String def = item.def();
+            if(TextUtils.isEmpty(vType)) {
+                if (type == Integer.class || type == int.class) {
+                    builder.append(field.getName()).append(" integer");
+                } else {
+                    builder.append(field.getName()).append(" varchar(255)");
+                }
+            }else {
+                builder.append(field.getName()).append(" ").append(vType);
+            }
+            if(!TextUtils.isEmpty(def)) {
+                builder.append(" default ").append(def);
+            }
+            builder.append(",");
+        }
+        builder.delete(builder.length() - 1, builder.length());
+        builder.append(")");
+        return builder.toString();
+    }
+
     public List<T> selectDataBase(){
         return selectDataBase(null, 0, 0);
     }
 
-    public List<T> selectDataBase(Map<String, Object> data){
+    public List<T> selectDataBase(T data){
         return selectDataBase(data, 0, 0);
     }
 
-    public List<T> selectDataBase(Map<String, Object> data, int page, int pageSize, String... ext) {
+    public List<T> selectDataBase(T data, int page, int pageSize, String... ext) {
         StringBuilder sql = new StringBuilder("SELECT * FROM ");
         sql.append(db_name);
         boolean firstAdd = true;
         List<String> obj_args = new ArrayList<>();
         if(data != null) {
-            for (String k : data.keySet()) {
-                Object o = data.get(k);
-                if (o == null) continue;
-                if (firstAdd) {
-                    sql.append(" WHERE ");
-                    firstAdd = false;
-                } else {
-                    sql.append(" AND ");
-                }
-                sql.append(" ").append(k).append("=");
-                Class<?> type = o.getClass();
-                if (type == String.class || type == Boolean.class) {//string
-                    sql.append("?");
-                    obj_args.add(String.valueOf(o));
-                } else {
-                    sql.append(o);
-                }
+            for (Field field : fields) {
+                try {
+                    Object o = field.get(data);
+                    if (o != null) {
+                        if (firstAdd) {
+                            sql.append(" WHERE ");
+                            firstAdd = false;
+                        } else {
+                            sql.append(" AND ");
+                        }
+                        sql.append(" ").append(field.getName()).append("=");
+                        Class<?> type = field.getType();
+                        if (type == String.class || type == Boolean.class || type == boolean.class) {//string
+                            sql.append("?");
+                            obj_args.add(String.valueOf(o));
+                        } else {
+                            sql.append(o);
+                        }
+                    }
+                } catch (IllegalAccessException ignored) {}
             }
         }
         if(pageSize != 0){
@@ -115,7 +146,7 @@ public class SqlUtil<T extends DbBean> {
             for (Field field : fields) {
                 String fieldName = field.getName();
                 boolean go = true;
-                if (ext != null && ext.length != 0) {
+                if (ext != null) {
                     for (String s : ext) {
                         if (s.equals(fieldName)) {
                             go = false;
@@ -139,10 +170,10 @@ public class SqlUtil<T extends DbBean> {
                             field.set(bean, cursor.getDouble(columnIndex));
                         } else if (type == Float.class || type == float.class) {
                             field.set(bean, cursor.getFloat(columnIndex));
+                        } else if (type == Short.class || type == short.class) {
+                            field.set(bean, cursor.getShort(columnIndex));
                         }
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    }
+                    } catch (IllegalAccessException ignored) {}
                 }
             }
             bean.readAndThen();
@@ -180,9 +211,7 @@ public class SqlUtil<T extends DbBean> {
                         obj_args.add(o);
                     }
                 }
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
+            } catch (IllegalAccessException ignored) {}
         }
         Object[] args = new Object[obj_args.size()];
         for (int i = 0; i < obj_args.size(); i++) {
@@ -212,14 +241,14 @@ public class SqlUtil<T extends DbBean> {
             try {
                 Object o = field.get(data);
                 Class<?> type = field.getType();
-                if (type == String.class || type == Boolean.class || type == boolean.class) {//string
-                    obj_args.add(o);
+                if(o == null){
+                    obj_args.add(null);
+                }else if (type == String.class || type == Boolean.class || type == boolean.class) {//string
+                    obj_args.add(String.valueOf(o));
                 } else {
                     obj_args.add(o);
                 }
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
+            } catch (IllegalAccessException ignored) {}
         }
         sql.append(")");
         Log.e("SQL","saveDataBase:\n" + sql.toString());
@@ -233,11 +262,8 @@ public class SqlUtil<T extends DbBean> {
         if(cursor.moveToFirst()){
             try {
                 key.set(data, cursor.getInt(0));
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
+            } catch (IllegalAccessException ignored) {}
         }
-        cursor.close();
     }
 
     /**
@@ -268,9 +294,7 @@ public class SqlUtil<T extends DbBean> {
                         obj_args.add(o);
                     }
                 }
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
+            } catch (IllegalAccessException ignored) {}
         }
         for (String s : where) {
             if(firstAdd){sql.append(" AND ");}else { firstAdd = true;sql.append(" WHERE "); }
@@ -304,10 +328,7 @@ public class SqlUtil<T extends DbBean> {
                     }else {
                         sql.append(" AND ");
                     }
-                    sql
-                            .append(" ")
-                            .append(field.getName())
-                            .append("=");
+                    sql.append(" ").append(field.getName()).append("=");
                     if(field.getType() == Integer.class
                             || field.getType() == int.class
                             || field.getType() == long.class
@@ -319,9 +340,7 @@ public class SqlUtil<T extends DbBean> {
                         sql.append("\"").append(o).append("\"");
                     }
                 }
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
+            } catch (IllegalAccessException ignored) {}
         }
         Cursor cursor = Db.doReadSql(db, sql.toString(), null);
         int c = 0;
@@ -364,9 +383,7 @@ public class SqlUtil<T extends DbBean> {
                         sql.append("\"").append(o).append("\"");
                     }
                 }
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
+            } catch (IllegalAccessException ignored) {}
         }
         Log.e("SQL","checkHasBean:\n" + sql.toString());
         Cursor cursor = Db.doReadSql(db, sql.toString(), null);

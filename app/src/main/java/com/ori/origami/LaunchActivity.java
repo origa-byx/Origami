@@ -22,6 +22,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.ori.origami.databinding.ActivityLaunchBinding;
+import com.ori.origami.jni.NativeOriTranscoding;
+import com.ori.origami.jni.OriAmr;
+import com.ori.origami.jni.OriAmrWbDec;
 import com.origami.activity.OriImageActivity;
 import com.origami.activity.OriImageSelect;
 import com.origami.origami.base.act.OriBaseActivity;
@@ -106,6 +109,10 @@ public class LaunchActivity extends OriBaseActivity<ActivityLaunchBinding> {
 
     @Override
     public void init(@Nullable Bundle savedInstanceState) {
+        Intent intent = new Intent(this, TestAct.class);
+        startActivity(intent);
+//        new Thread(()-> OriAmrWbDec.test(this, null)).start();
+        if(true) return;
 //        mViews.surface.setVisibility(View.GONE);
 //        mViews.surface2.setVisibility(View.GONE);
 

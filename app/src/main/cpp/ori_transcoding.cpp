@@ -65,7 +65,8 @@ void Transcoding::init() {
     LOG_E("ffmpeg -v: %s", av_version_info());
 
 //    AVCodecID avCodecId = AV_CODEC_ID_MP3;
-    infile = fopen(srcPath.data(), "rb");
+//    infile = fopen(srcPath.data(), "rb");
+    //AV_CODEC_ID_AMR_WB AV_CODEC_ID_AV1
     m_AudioCodec = avcodec_find_encoder(AVCodecID::AV_CODEC_ID_AV1);
     if(!m_AudioCodec){
         LOG_E("编码器查找失败");
@@ -131,7 +132,6 @@ void Transcoding::init() {
                                           m_AudioCodecContext->channels,
                                           m_AudioCodecContext->frame_size,
                                           m_AudioCodecContext->sample_fmt, 1);
-
     if(size < 0){
         LOG_E("获取单帧缓冲区大小失败");
         release();

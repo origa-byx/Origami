@@ -41,7 +41,6 @@ android {
             path "CMakeLists.txt"
         }
     }
-
     packagingOptions {
         pickFirst 'lib/armeabi-v7a/libqrdatadecode.so'
         pickFirst 'lib/arm64-v8a/libqrdatadecode.so'
@@ -59,7 +58,14 @@ android {
         pickFirst 'lib/arm64-v8a/liboricv.so'
         pickFirst 'lib/armeabi-v7a/libori_ppn.so'
         pickFirst 'lib/arm64-v8a/libori_ppn.so'
+        pickFirst 'lib/arm64-v8a/libori_amr.so'
+        pickFirst 'lib/armeabi-v7a/libori_amr.so'
+        pickFirst 'lib/arm64-v8a/libori_amr_wb.so'
+        pickFirst 'lib/armeabi-v7a/libori_amr_wb.so'
+        pickFirst 'lib/arm64-v8a/libori_amr_wb_dec.so'
+        pickFirst 'lib/armeabi-v7a/libori_amr_wb_dec.so'
     }
+
 
     sourceSets {
         main {
@@ -69,12 +75,15 @@ android {
     }
 
     //设置打包时  包名
-    android.applicationVariants.all { variant ->
-        variant.outputs.all {
+    android.applicationVariants.configureEach { variant ->
+        variant.outputs.configureEach {
             outputFileName = "app_${defaultConfig.versionName}.apk"
         }
     }
-    dataBinding{ enabled=true }
+    buildFeatures{
+        dataBinding = true
+    }
+    namespace 'com.ori.origami'
 }
 
 dependencies {
@@ -89,6 +98,8 @@ dependencies {
     implementation 'com.nanohttpd:nanohttpd:2.2.0'
     // https://mvnrepository.com/artifact/com.github.lecho/hellocharts-library
     implementation 'com.github.lecho:hellocharts-library:1.5.8'
+
+    implementation 'com.github.ashqal:android-libresample:0.3.0'
 
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
